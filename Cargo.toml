@@ -1,0 +1,9 @@
+[package]
+name = "specs-test"
+version = "0.1.0"
+authors = ["Max Hunt <max@huntw3.com>"]
+edition = "2018"
+
+[dependencies]
+specs = "0.14"
+quicksilver = "0.3"
