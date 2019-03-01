@@ -16,6 +16,7 @@ struct Property {
 #[derive(Debug, Serialize, Deserialize)]
 struct ComponentData {
     name: String,
+    #[serde(default)]
     properties: Vec<Property>,
 }
 

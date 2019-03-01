@@ -1,7 +1,7 @@
 EntityData(
 	name: "chode",
 	components: [
-		    (name: "Spawned", properties: []),
+		    (name: "Spawned"),
 		    (name: "RenderComponent", properties: [(name: "width", value: "20.0"), (name: "height", value: "20.0"), (name: "colour", value: "Color::RED")]),
 		    (name: "HitBox", properties: [(name: "width", value: "20.0"), (name: "height", value: "20.0")]),
 	],
