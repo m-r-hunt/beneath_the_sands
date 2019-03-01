@@ -1,7 +1,6 @@
-use super::physics::{HitBox, Movement};
-use super::render::RenderComponent;
+use super::physics::Movement;
 use super::{Event, EventQueue, SimTime, Timer, WorldBounds};
-use quicksilver::graphics::Color;
+use crate::prefabs::PrefabBuilder;
 use specs::prelude::*;
 
 pub struct HardBoundsCheck {
@@ -150,19 +149,10 @@ pub fn spawn_chode(
 ) {
     lazy_update
         .create_entity(entities)
+        .with_chode_prefab()
         .with(Movement {
             position: coords,
             velocity,
-        })
-        .with(Spawned)
-        .with(RenderComponent {
-            width: 20.0,
-            height: 20.0,
-            colour: Color::RED,
-        })
-        .with(HitBox {
-            width: 20.0,
-            height: 20.0,
         })
         .build();
 }

@@ -1,0 +1,8 @@
+EntityData(
+	name: "player",
+	components: [
+		    (name: "Movement", properties: [(name: "position",  value: "(crate::SCREEN_WIDTH / 2.0, crate::SCREEN_HEIGHT - 100.0)"), (name: "velocity", value: "(0.0, 0.0)")]),
+		    (name: "RenderComponent", properties: [(name: "width", value: "20.0"), (name: "height", value: "50.0"), (name: "colour", value: "Color::BLUE")]),
+		    (name: "PlayerControls", properties: [(name: "fire_cooldown", value: "Default::default()")]),
+	],
+)

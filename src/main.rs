@@ -1,6 +1,5 @@
 extern crate specs;
 
-use quicksilver::graphics::Color;
 use quicksilver::lifecycle::{run, Settings, State, Window};
 use specs::{Builder, Dispatcher, DispatcherBuilder, Entity, World};
 
@@ -20,6 +19,16 @@ use gameplay::{
 
 mod render;
 use render::{Render, RenderComponent};
+
+mod prefabs;
+use prefabs::PrefabBuilder;
+
+mod all_components {
+    pub use crate::gameplay::Spawned;
+    pub use crate::physics::{Bullet, HitBox, Movement};
+    pub use crate::player::PlayerControls;
+    pub use crate::render::RenderComponent;
+}
 
 #[derive(Copy, Clone, Debug, Default)]
 pub struct SimTime {
@@ -102,37 +111,7 @@ impl State for GameState {
         world.register::<HitBox>();
         world.register::<Bullet>();
         world.register::<Spawned>();
-        world
-            .create_entity()
-            .with(Movement {
-                position: (SCREEN_WIDTH / 2.0, 100.0),
-                velocity: (0.0, 0.0),
-            })
-            .with(HitBox {
-                width: 50.0,
-                height: 50.0,
-            })
-            .with(RenderComponent {
-                width: 50.0,
-                height: 50.0,
-                colour: Color::RED,
-            })
-            .build();
-        world
-            .create_entity()
-            .with(Movement {
-                position: (SCREEN_WIDTH / 2.0, SCREEN_HEIGHT - 100.0),
-                velocity: (0.0, 0.0),
-            })
-            .with(RenderComponent {
-                width: 20.0,
-                height: 50.0,
-                colour: Color::BLUE,
-            })
-            .with(PlayerControls {
-                fire_cooldown: Default::default(),
-            })
-            .build();
+        world.create_entity().with_player_prefab().build();
         world.add_resource::<Input>(Default::default());
         world.add_resource::<SimTime>(Default::default());
         world.add_resource::<EventQueue>(Default::default());

@@ -1,7 +1,6 @@
-use super::physics::{Bullet, Movement};
-use super::render::RenderComponent;
+use super::physics::Movement;
 use super::{Input, SimTime, Timer, WorldBounds};
-use quicksilver::graphics::Color;
+use crate::prefabs::PrefabBuilder;
 use specs::prelude::*;
 
 const PLAYER_SPEED: f32 = 2.0;
@@ -57,16 +56,11 @@ impl<'a> System<'a> for PlayerControlSystem {
             if input.fire && player_controls.fire_cooldown.expired(*sim_time) {
                 lazy_update
                     .create_entity(&entities)
+                    .with_bullet_prefab()
                     .with(Movement {
                         position: (movement.position.0, movement.position.1 - 30.0),
                         velocity: (0.0, -10.0),
                     })
-                    .with(RenderComponent {
-                        width: 5.0,
-                        height: 5.0,
-                        colour: Color::YELLOW,
-                    })
-                    .with(Bullet)
                     .build();
                 player_controls.fire_cooldown.set(*sim_time, 1.0 / 10.0);
             }
