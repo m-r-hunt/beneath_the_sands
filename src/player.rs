@@ -45,7 +45,9 @@ impl<'a> System<'a> for PlayerControlSystem {
             if input.down {
                 movement.velocity.1 = 1.0;
             }
-            let vel_len = (movement.velocity.0 * movement.velocity.0 + movement.velocity.0 * movement.velocity.0).sqrt();
+            let vel_len = (movement.velocity.0 * movement.velocity.0
+                + movement.velocity.0 * movement.velocity.0)
+                .sqrt();
             if vel_len > std::f32::EPSILON {
                 movement.velocity.0 /= vel_len;
                 movement.velocity.1 /= vel_len;

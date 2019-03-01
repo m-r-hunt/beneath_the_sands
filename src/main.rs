@@ -14,7 +14,9 @@ mod player;
 use player::{PlayerControlSystem, PlayerControls, SoftBoundsCheck};
 
 mod gameplay;
-use gameplay::{spawn_chode, CollisionHandler, HardBoundsCheck, Spawned, Spawner, Wave};
+use gameplay::{
+    spawn_chode, CollisionHandler, HardBoundsCheck, Spawned, Spawner, SpawnerState, Wave,
+};
 
 mod render;
 use render::{Render, RenderComponent};
@@ -30,6 +32,12 @@ pub struct Timer {
 }
 
 impl Timer {
+    fn new_set(sim_time: SimTime, duration: f32) -> Timer {
+        Timer {
+            expire_time: sim_time.time + duration,
+        }
+    }
+
     fn set(&mut self, sim_time: SimTime, duration: f32) {
         self.expire_time = sim_time.time + duration;
     }
@@ -196,14 +204,18 @@ fn make_dispatcher<'a, 'b>() -> Dispatcher<'a, 'b> {
                         delay: 1.0,
                     },
                     Wave {
-                        spawn_fn: Box::new(|lu, e| spawn_chode((SCREEN_WIDTH + 5.0, 60.0), (-2.0, 0.0), lu, e)),
+                        spawn_fn: Box::new(|lu, e| {
+                            spawn_chode((SCREEN_WIDTH + 5.0, 60.0), (-2.0, 0.0), lu, e)
+                        }),
                         repeats: 5,
                         delay: 1.0,
                     },
                 ],
-                current_wave: 0,
-                current_repeat: 0,
-                repeat_cooldown: Default::default(),
+                state: SpawnerState::Spawning {
+                    repeat: 0,
+                    wave: 0,
+                    cooldown: Default::default(),
+                },
             },
             "spawner",
             &["collision_handler"],

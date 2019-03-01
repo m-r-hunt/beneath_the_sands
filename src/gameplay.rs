@@ -54,14 +54,71 @@ impl Component for Spawned {
 
 pub struct Spawner {
     pub waves: Vec<Wave>,
-    pub current_wave: usize,
-    pub current_repeat: i32,
-    pub repeat_cooldown: Timer,
+    pub state: SpawnerState,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum SpawnerState {
+    Spawning {
+        wave: usize,
+        repeat: usize,
+        cooldown: Timer,
+    },
+    Done,
+}
+
+enum SpawnAction {
+    None,
+    Spawn(usize),
+}
+
+impl SpawnerState {
+    fn run(
+        &self,
+        sim_time: SimTime,
+        waves: &[Wave],
+        num_spawned: usize,
+    ) -> (SpawnAction, SpawnerState) {
+        match self {
+            SpawnerState::Spawning {
+                repeat,
+                wave,
+                cooldown,
+            } if cooldown.expired(sim_time) && *repeat < waves[*wave].repeats => (
+                SpawnAction::Spawn(*wave),
+                SpawnerState::Spawning {
+                    repeat: repeat + 1,
+                    wave: *wave,
+                    cooldown: Timer::new_set(sim_time, waves[*wave].delay),
+                },
+            ),
+            SpawnerState::Spawning { repeat, wave, .. }
+                if num_spawned == 0
+                    && *repeat >= waves[*wave].repeats
+                    && wave + 1 < waves.len() =>
+            {
+                (
+                    SpawnAction::None,
+                    SpawnerState::Spawning {
+                        repeat: 0,
+                        wave: wave + 1,
+                        cooldown: Default::default(),
+                    },
+                )
+            }
+            SpawnerState::Spawning { repeat, wave, .. }
+                if num_spawned == 0 && *repeat >= waves[*wave].repeats =>
+            {
+                (SpawnAction::None, SpawnerState::Done)
+            }
+            _ => (SpawnAction::None, *self),
+        }
+    }
 }
 
 pub struct Wave {
     pub spawn_fn: Box<Fn(&LazyUpdate, &Entities) + Send>,
-    pub repeats: i32,
+    pub repeats: usize,
     pub delay: f32,
 }
 
@@ -74,30 +131,28 @@ impl<'a> System<'a> for Spawner {
     );
 
     fn run(&mut self, (lazy_update, entities, spawned, sim_time): Self::SystemData) {
-        let number_remaining = spawned.join().count();
-        if self.repeat_cooldown.expired(*sim_time) {
-            if number_remaining == 0 && self.current_wave < self.waves.len() && self.current_repeat >= self.waves[self.current_wave].repeats  {
-                self.current_wave += 1;
-                self.current_repeat = 0;
-            }
-            if self.current_wave < self.waves.len() {
-                let current_wave = &self.waves[self.current_wave];
-                if self.current_repeat < current_wave.repeats {
-                    (current_wave.spawn_fn)(&lazy_update, &entities);
-                    self.current_repeat += 1;
-                    self.repeat_cooldown.set(*sim_time, current_wave.delay);
-                }
-            }
+        let (action, new_state) = self
+            .state
+            .run(*sim_time, &self.waves, spawned.join().count());
+        match action {
+            SpawnAction::Spawn(w) => (self.waves[w].spawn_fn)(&lazy_update, &entities),
+            SpawnAction::None => (),
         }
+        self.state = new_state;
     }
 }
 
-pub fn spawn_chode(coords: (f32, f32), velocity: (f32, f32), lazy_update: &LazyUpdate, entities: &Entities) {
+pub fn spawn_chode(
+    coords: (f32, f32),
+    velocity: (f32, f32),
+    lazy_update: &LazyUpdate,
+    entities: &Entities,
+) {
     lazy_update
         .create_entity(entities)
         .with(Movement {
             position: coords,
-            velocity: velocity,
+            velocity,
         })
         .with(Spawned)
         .with(RenderComponent {
