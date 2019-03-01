@@ -111,7 +111,14 @@ impl State for GameState {
         world.register::<HitBox>();
         world.register::<Bullet>();
         world.register::<Spawned>();
-        world.create_entity().with_player_prefab().build();
+        world
+            .create_entity()
+            .with_player_prefab()
+            .with(Movement {
+                position: (SCREEN_WIDTH / 2.0, SCREEN_HEIGHT - 100.0),
+                velocity: (0.0, 0.0),
+            })
+            .build();
         world.add_resource::<Input>(Default::default());
         world.add_resource::<SimTime>(Default::default());
         world.add_resource::<EventQueue>(Default::default());
