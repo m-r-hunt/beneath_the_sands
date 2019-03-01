@@ -5,6 +5,7 @@ use specs::prelude::*;
 
 const PLAYER_SPEED: f32 = 2.0;
 
+#[derive(Default)]
 pub struct PlayerControls {
     pub fire_cooldown: Timer,
 }

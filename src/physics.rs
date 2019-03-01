@@ -1,7 +1,7 @@
 use super::{Event, EventQueue};
 use specs::prelude::*;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Movement {
     pub position: (f32, f32),
     pub velocity: (f32, f32),
@@ -18,6 +18,7 @@ impl Component for Bullet {
     type Storage = HashMapStorage<Self>;
 }
 
+#[derive(Default)]
 pub struct HitBox {
     pub width: f32,
     pub height: f32,

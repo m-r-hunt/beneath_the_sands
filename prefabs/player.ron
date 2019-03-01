@@ -6,6 +6,6 @@ Prefab(
             (name: "height", value: "50.0"),
             (name: "colour", value: "Color::BLUE"),
         ]),
-	(name: "PlayerControls", properties: [(name: "fire_cooldown", value: "Default::default()")]),
+	(name: "PlayerControls"),
     ],
 )

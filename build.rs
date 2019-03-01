@@ -56,6 +56,7 @@ fn with_{{name}}_prefab(self) -> Self {
         {{#each properties}}
         {{name}}: {{value}},
         {{/each}}
+        .. Default::default()
     })
     {{/each}}
 }

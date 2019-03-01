@@ -3,6 +3,7 @@ use quicksilver::graphics::Color;
 use quicksilver::lifecycle::Window;
 use specs::prelude::*;
 
+#[derive(Default)]
 pub struct RenderComponent {
     pub width: f32,
     pub height: f32,
