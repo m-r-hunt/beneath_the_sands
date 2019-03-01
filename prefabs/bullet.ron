@@ -1,7 +1,11 @@
-EntityData(
-	name: "bullet",
-	components: [
-		    (name: "RenderComponent", properties: [(name: "width", value: "5.0"), (name: "height", value: "5.0"), (name: "colour", value: "Color::YELLOW")]),
-		    (name: "Bullet"),
-	],
+Prefab(
+    name: "bullet",
+    components: [
+	(name: "RenderComponent", properties: [
+            (name: "width", value: "5.0"),
+            (name: "height", value: "5.0"),
+            (name: "colour", value: "Color::YELLOW")
+        ]),
+	(name: "Bullet"),
+    ],
 )

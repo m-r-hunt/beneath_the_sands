@@ -21,7 +21,7 @@ struct ComponentData {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct EntityData {
+struct Prefab {
     name: String,
     components: Vec<ComponentData>,
 }
@@ -75,7 +75,7 @@ fn main() {
         let entry = entry.unwrap();
         if entry.path().is_file() && entry.path().extension() == Some(OsStr::new("ron")) {
             let content = std::fs::read_to_string(entry.path()).unwrap();
-            let ent_data: EntityData = ron::de::from_str(&content).unwrap();
+            let ent_data: Prefab = ron::de::from_str(&content).unwrap();
             let result = hb.render_template(TEMPLATE, &ent_data);
             writeln!(outfile, "{}", result.unwrap()).unwrap();
         }
