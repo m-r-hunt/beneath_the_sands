@@ -5,8 +5,12 @@ authors = ["Max Hunt <max@huntw3.com>"]
 edition = "2018"
 
 [dependencies]
-specs = "0.14"
-quicksilver = "0.3"
+quicksilver = {version = "0.3"}
+specs = {version = "0.14"}
+
+# Alt specs dependency for web version. Needed because specs with parallel doesn't work on web version.
+# Specifying different dependencies for the web version in cargo-web seems to be broken so this will have to do.
+#specs = {version = "0.14", default-features = false}
 
 [build-dependencies]
 serde = "1.0"
