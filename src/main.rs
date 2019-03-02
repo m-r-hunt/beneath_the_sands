@@ -1,5 +1,6 @@
 extern crate specs;
 
+use quicksilver::input::ButtonState;
 use quicksilver::lifecycle::{run, Settings, State, Window};
 use specs::{Builder, Dispatcher, DispatcherBuilder, Entity, World};
 
@@ -97,7 +98,15 @@ impl EventQueue {
     }
 }
 
+enum UIState {
+    Title,
+    Playing,
+    Pause(Dispatcher<'static, 'static>),
+    GameOver(Dispatcher<'static, 'static>),
+}
+
 struct GameState {
+    ui_state: UIState,
     world: World,
     dispatcher: Dispatcher<'static, 'static>,
 }
@@ -129,35 +138,56 @@ impl State for GameState {
             bottom: SCREEN_HEIGHT,
         });
         Ok(GameState {
+            ui_state: UIState::Playing,
             world,
             dispatcher: make_dispatcher(),
         })
     }
 
     fn update(&mut self, window: &mut Window) -> quicksilver::Result<()> {
-        let input = Input {
-            down: window.keyboard()[quicksilver::input::Key::S].is_down(),
-            left: window.keyboard()[quicksilver::input::Key::A].is_down(),
-            up: window.keyboard()[quicksilver::input::Key::W].is_down(),
-            right: window.keyboard()[quicksilver::input::Key::D].is_down(),
-            fire: window.keyboard()[quicksilver::input::Key::Space].is_down(),
-        };
-        self.world.add_resource(input);
-        let mut sim_time = *self.world.read_resource::<SimTime>();
-        sim_time.time += 1.0 / 60.0; // Quicksilver tries to call at 60fps
-        self.world.add_resource(sim_time);
-        self.world.write_resource::<EventQueue>().clear();
-        self.dispatcher.dispatch(&self.world.res);
-        self.world.maintain();
-        Ok(())
+        match self.ui_state {
+            UIState::Title => {
+                if window.keyboard()[quicksilver::input::Key::Escape] == ButtonState::Pressed {
+                    window.close();
+                }
+                if window.keyboard()[quicksilver::input::Key::Space] == ButtonState::Pressed {
+                    self.ui_state = UIState::Playing;
+                }
+                Ok(())
+            }
+            UIState::Playing => {
+                let input = Input {
+                    down: window.keyboard()[quicksilver::input::Key::S].is_down(),
+                    left: window.keyboard()[quicksilver::input::Key::A].is_down(),
+                    up: window.keyboard()[quicksilver::input::Key::W].is_down(),
+                    right: window.keyboard()[quicksilver::input::Key::D].is_down(),
+                    fire: window.keyboard()[quicksilver::input::Key::Space].is_down(),
+                };
+                self.world.add_resource(input);
+                let mut sim_time = *self.world.read_resource::<SimTime>();
+                sim_time.time += 1.0 / 60.0; // Quicksilver tries to call at 60fps
+                self.world.add_resource(sim_time);
+                self.world.write_resource::<EventQueue>().clear();
+                self.dispatcher.dispatch_seq(&self.world.res);
+                self.world.maintain();
+                Ok(())
+            }
+            _ => panic!("Unimplemented ui state"),
+        }
     }
 
     fn draw(&mut self, window: &mut Window) -> quicksilver::Result<()> {
         use specs::RunNow;
 
-        let mut render = Render { window };
-        render.run_now(&self.world.res);
-        Ok(())
+        match self.ui_state {
+            UIState::Title => Ok(()),
+            UIState::Playing => {
+                let mut render = Render { window };
+                render.run_now(&self.world.res);
+                Ok(())
+            }
+            _ => panic!("Unimplented ui state"),
+        }
     }
 }
 
