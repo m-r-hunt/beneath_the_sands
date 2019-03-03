@@ -5,8 +5,7 @@ use specs::prelude::*;
 
 #[derive(Default)]
 pub struct RenderComponent {
-    pub width: f32,
-    pub height: f32,
+    pub radius: f32,
     pub colour: Color,
 }
 
@@ -26,13 +25,7 @@ impl<'a: 'b, 'b> System<'b> for Render<'a> {
             .clear(quicksilver::graphics::Color::BLACK)
             .unwrap();
         for (movement, render) in (&movement, &render).join() {
-            let rect = quicksilver::geom::Rectangle::new(
-                (
-                    movement.position.0 - render.width / 2.0,
-                    movement.position.1 - render.height / 2.0,
-                ),
-                (render.width, render.height),
-            );
+            let rect = quicksilver::geom::Circle::new(movement.position, render.radius);
             self.window
                 .draw(&rect, quicksilver::graphics::Background::Col(render.colour));
         }

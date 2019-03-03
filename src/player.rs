@@ -1,6 +1,7 @@
 use super::physics::Movement;
-use super::{Input, SimTime, Timer, WorldBounds};
+use super::{Input, SimTime, Timer};
 use crate::prefabs::PrefabBuilder;
+use quicksilver::geom::Vector;
 use specs::prelude::*;
 
 const PLAYER_SPEED: f32 = 2.0;
@@ -32,58 +33,38 @@ impl<'a> System<'a> for PlayerControlSystem {
         (mut player_controls, mut movements, input, sim_time, lazy_update, entities): Self::SystemData,
     ) {
         for (player_controls, movement) in (&mut player_controls, &mut movements).join() {
-            movement.velocity = (0.0, 0.0);
+            movement.velocity = Vector::new(0.0, 0.0);
             if input.left {
-                movement.velocity.0 = -1.0;
+                movement.velocity.x = -1.0;
             }
             if input.right {
-                movement.velocity.0 = 1.0;
+                movement.velocity.x = 1.0;
             }
             if input.up {
-                movement.velocity.1 = -1.0;
+                movement.velocity.y = -1.0;
             }
             if input.down {
-                movement.velocity.1 = 1.0;
+                movement.velocity.y = 1.0;
             }
-            let vel_len = (movement.velocity.0 * movement.velocity.0
-                + movement.velocity.0 * movement.velocity.0)
+            let vel_len = (movement.velocity.x * movement.velocity.x
+                + movement.velocity.x * movement.velocity.x)
                 .sqrt();
             if vel_len > std::f32::EPSILON {
-                movement.velocity.0 /= vel_len;
-                movement.velocity.1 /= vel_len;
+                movement.velocity.x /= vel_len;
+                movement.velocity.y /= vel_len;
             }
-            movement.velocity.0 *= PLAYER_SPEED;
-            movement.velocity.1 *= PLAYER_SPEED;
+            movement.velocity.x *= PLAYER_SPEED;
+            movement.velocity.y *= PLAYER_SPEED;
             if input.fire && player_controls.fire_cooldown.expired(*sim_time) {
+                let velocity = (input.mouse_pos - movement.position).with_len(10.0);
+                let position = movement.position + velocity.with_len(30.0);
                 lazy_update
                     .create_entity(&entities)
                     .with_bullet_prefab()
-                    .with(Movement {
-                        position: (movement.position.0, movement.position.1 - 30.0),
-                        velocity: (0.0, -10.0),
-                    })
+                    .with(Movement { position, velocity })
                     .build();
                 player_controls.fire_cooldown.set(*sim_time, 1.0 / 10.0);
             }
-        }
-    }
-}
-
-pub struct SoftBoundsCheck;
-
-impl<'a> System<'a> for SoftBoundsCheck {
-    type SystemData = (
-        WriteStorage<'a, Movement>,
-        ReadStorage<'a, PlayerControls>,
-        Read<'a, WorldBounds>,
-    );
-
-    fn run(&mut self, (mut movement, players, bounds): Self::SystemData) {
-        for (movement, _) in (&mut movement, &players).join() {
-            movement.position.0 = movement.position.0.max(bounds.left);
-            movement.position.0 = movement.position.0.min(bounds.right);
-            movement.position.1 = movement.position.1.max(bounds.top);
-            movement.position.1 = movement.position.1.min(bounds.bottom);
         }
     }
 }

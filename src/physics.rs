@@ -1,10 +1,11 @@
 use super::{Event, EventQueue};
+use quicksilver::geom::Vector;
 use specs::prelude::*;
 
 #[derive(Debug, Default)]
 pub struct Movement {
-    pub position: (f32, f32),
-    pub velocity: (f32, f32),
+    pub position: Vector,
+    pub velocity: Vector,
 }
 
 impl Component for Movement {
@@ -12,16 +13,18 @@ impl Component for Movement {
 }
 
 #[derive(Debug, Default)]
-pub struct Bullet;
+pub struct Bullet {
+    pub radius: f32,
+}
 
 impl Component for Bullet {
     type Storage = HashMapStorage<Self>;
 }
 
+// Default hitbox is actually a circle.
 #[derive(Default)]
 pub struct HitBox {
-    pub width: f32,
-    pub height: f32,
+    pub radius: f32,
 }
 
 impl Component for HitBox {
@@ -35,8 +38,7 @@ impl<'a> System<'a> for MovementSystem {
 
     fn run(&mut self, mut movement: Self::SystemData) {
         for movement in (&mut movement).join() {
-            movement.position.0 += movement.velocity.0;
-            movement.position.1 += movement.velocity.1;
+            movement.position += movement.velocity;
         }
     }
 }
@@ -54,11 +56,10 @@ impl<'a> System<'a> for CollisionDetection {
 
     fn run(&mut self, (movements, hitbox, bullet, entities, mut event_queue): Self::SystemData) {
         for (movement, hitbox, entity) in (&movements, &hitbox, &entities).join() {
-            for (bullet_movement, bullet_entity, _) in (&movements, &entities, &bullet).join() {
-                if bullet_movement.position.0 > movement.position.0 - hitbox.width / 2.0
-                    && bullet_movement.position.0 < movement.position.0 + hitbox.width / 2.0
-                    && bullet_movement.position.1 > movement.position.1 - hitbox.height / 2.0
-                    && bullet_movement.position.1 < movement.position.1 + hitbox.height / 2.0
+            for (bullet_movement, bullet_entity, bullet) in (&movements, &entities, &bullet).join()
+            {
+                if (bullet_movement.position - movement.position).len()
+                    < hitbox.radius + bullet.radius
                 {
                     event_queue.enqueue(Event::Collision(entity, bullet_entity));
                 }

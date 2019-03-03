@@ -1,0 +1,12 @@
+Prefab(
+    name: "target",
+    components: [
+	(name: "RenderComponent", properties: [
+            (name: "radius", value: "20.0"),
+            (name: "colour", value: "Color::RED"),
+        ]),
+	(name: "HitBox", properties: [
+            (name: "radius", value: "20.0"),
+        ]),
+    ],
+)

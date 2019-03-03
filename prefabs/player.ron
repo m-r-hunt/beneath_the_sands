@@ -2,8 +2,7 @@ Prefab(
     name: "player",
     components: [
 	(name: "RenderComponent", properties: [
-            (name: "width", value: "20.0"),
-            (name: "height", value: "50.0"),
+            (name: "radius", value: "20.0"),
             (name: "colour", value: "Color::BLUE"),
         ]),
 	(name: "PlayerControls"),

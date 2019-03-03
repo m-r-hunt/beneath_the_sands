@@ -1,22 +1,21 @@
 extern crate specs;
 
-use quicksilver::input::ButtonState;
+use quicksilver::geom::Vector;
+use quicksilver::input::{ButtonState, MouseButton};
 use quicksilver::lifecycle::{run, Settings, State, Window};
 use specs::{Builder, Dispatcher, DispatcherBuilder, Entity, World};
 
-const SCREEN_WIDTH: f32 = 250.0;
+const SCREEN_WIDTH: f32 = 800.0;
 const SCREEN_HEIGHT: f32 = 600.0;
 
 mod physics;
 use physics::{Bullet, CollisionDetection, HitBox, Movement, MovementSystem};
 
 mod player;
-use player::{PlayerControlSystem, PlayerControls, SoftBoundsCheck};
+use player::{PlayerControlSystem, PlayerControls};
 
 mod gameplay;
-use gameplay::{
-    spawn_chode, CollisionHandler, HardBoundsCheck, Spawned, Spawner, SpawnerState, Wave,
-};
+use gameplay::CollisionHandler;
 
 mod render;
 use render::{Render, RenderComponent};
@@ -25,7 +24,6 @@ mod prefabs;
 use prefabs::PrefabBuilder;
 
 mod all_components {
-    pub use crate::gameplay::Spawned;
     pub use crate::physics::{Bullet, HitBox, Movement};
     pub use crate::player::PlayerControls;
     pub use crate::render::RenderComponent;
@@ -42,6 +40,7 @@ pub struct Timer {
 }
 
 impl Timer {
+    #[allow(dead_code)]
     fn new_set(sim_time: SimTime, duration: f32) -> Timer {
         Timer {
             expire_time: sim_time.time + duration,
@@ -64,14 +63,7 @@ pub struct Input {
     up: bool,
     down: bool,
     fire: bool,
-}
-
-#[derive(Default)]
-pub struct WorldBounds {
-    top: f32,
-    left: f32,
-    bottom: f32,
-    right: f32,
+    mouse_pos: Vector,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -119,24 +111,25 @@ impl State for GameState {
         world.register::<RenderComponent>();
         world.register::<HitBox>();
         world.register::<Bullet>();
-        world.register::<Spawned>();
         world
             .create_entity()
             .with_player_prefab()
             .with(Movement {
-                position: (SCREEN_WIDTH / 2.0, SCREEN_HEIGHT - 100.0),
-                velocity: (0.0, 0.0),
+                position: Vector::new(SCREEN_WIDTH / 2.0, SCREEN_HEIGHT - 100.0),
+                velocity: Vector::new(0.0, 0.0),
+            })
+            .build();
+        world
+            .create_entity()
+            .with_target_prefab()
+            .with(Movement {
+                position: Vector::new(SCREEN_WIDTH / 2.0, 100.0),
+                velocity: Vector::new(0.0, 0.0),
             })
             .build();
         world.add_resource::<Input>(Default::default());
         world.add_resource::<SimTime>(Default::default());
         world.add_resource::<EventQueue>(Default::default());
-        world.add_resource(WorldBounds {
-            top: 0.0,
-            left: 0.0,
-            right: SCREEN_WIDTH,
-            bottom: SCREEN_HEIGHT,
-        });
         Ok(GameState {
             ui_state: UIState::Playing,
             world,
@@ -161,7 +154,8 @@ impl State for GameState {
                     left: window.keyboard()[quicksilver::input::Key::A].is_down(),
                     up: window.keyboard()[quicksilver::input::Key::W].is_down(),
                     right: window.keyboard()[quicksilver::input::Key::D].is_down(),
-                    fire: window.keyboard()[quicksilver::input::Key::Space].is_down(),
+                    fire: window.mouse()[MouseButton::Left].is_down(),
+                    mouse_pos: window.mouse().pos(),
                 };
                 self.world.add_resource(input);
                 let mut sim_time = *self.world.read_resource::<SimTime>();
@@ -195,46 +189,11 @@ fn make_dispatcher<'a, 'b>() -> Dispatcher<'a, 'b> {
     DispatcherBuilder::new()
         .with(PlayerControlSystem, "player_control", &[])
         .with(MovementSystem, "movement", &["player_control"])
-        .with(
-            HardBoundsCheck { padding: 50.0 },
-            "hard_bounds_check",
-            &["movement"],
-        )
-        .with(SoftBoundsCheck, "soft_bounds_check", &["movement"])
-        .with(
-            CollisionDetection,
-            "collision_detection",
-            &["hard_bounds_check", "soft_bounds_check"],
-        )
+        .with(CollisionDetection, "collision_detection", &[])
         .with(
             CollisionHandler,
             "collision_handler",
             &["collision_detection"],
-        )
-        .with(
-            Spawner {
-                waves: vec![
-                    Wave {
-                        spawn_fn: Box::new(|lu, e| spawn_chode((-5.0, 30.0), (2.0, 0.0), lu, e)),
-                        repeats: 5,
-                        delay: 1.0,
-                    },
-                    Wave {
-                        spawn_fn: Box::new(|lu, e| {
-                            spawn_chode((SCREEN_WIDTH + 5.0, 60.0), (-2.0, 0.0), lu, e)
-                        }),
-                        repeats: 5,
-                        delay: 1.0,
-                    },
-                ],
-                state: SpawnerState::Spawning {
-                    repeat: 0,
-                    wave: 0,
-                    cooldown: Default::default(),
-                },
-            },
-            "spawner",
-            &["collision_handler"],
         )
         .build()
 }
