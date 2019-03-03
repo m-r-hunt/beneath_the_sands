@@ -5,6 +5,7 @@ Prefab(
             (name: "radius", value: "20.0"),
             (name: "colour", value: "Color::BLUE"),
         ]),
+	(name: "HitBox", properties: [(name: "radius", value: "20.0")]),
 	(name: "PlayerControls"),
     ],
 )

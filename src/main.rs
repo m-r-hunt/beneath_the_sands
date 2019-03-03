@@ -1,6 +1,7 @@
 extern crate specs;
 
 use quicksilver::geom::Vector;
+use quicksilver::graphics::Color;
 use quicksilver::input::{ButtonState, MouseButton};
 use quicksilver::lifecycle::{run, Settings, State, Window};
 use specs::{Builder, Dispatcher, DispatcherBuilder, Entity, World};
@@ -9,7 +10,7 @@ const SCREEN_WIDTH: f32 = 800.0;
 const SCREEN_HEIGHT: f32 = 600.0;
 
 mod physics;
-use physics::{Bullet, CollisionDetection, HitBox, Movement, MovementSystem};
+use physics::{Bullet, CollisionDetection, HitBox, Movement, MovementSystem, Tile, TileMap};
 
 mod player;
 use player::{PlayerControlSystem, PlayerControls};
@@ -18,7 +19,7 @@ mod gameplay;
 use gameplay::CollisionHandler;
 
 mod render;
-use render::{Render, RenderComponent};
+use render::{Render, RenderComponent, TileMapRender};
 
 mod prefabs;
 use prefabs::PrefabBuilder;
@@ -130,6 +131,14 @@ impl State for GameState {
         world.add_resource::<Input>(Default::default());
         world.add_resource::<SimTime>(Default::default());
         world.add_resource::<EventQueue>(Default::default());
+        world.add_resource::<TileMap>(Default::default());
+        world.write_resource::<TileMap>().tiles.insert(
+            (0, 0),
+            Tile {
+                collision: true,
+                colour: Color::WHITE,
+            },
+        );
         Ok(GameState {
             ui_state: UIState::Playing,
             world,
@@ -176,6 +185,9 @@ impl State for GameState {
         match self.ui_state {
             UIState::Title => Ok(()),
             UIState::Playing => {
+                window.clear(quicksilver::graphics::Color::BLACK).unwrap();
+                let mut tilemap_render = TileMapRender { window };
+                tilemap_render.run_now(&self.world.res);
                 let mut render = Render { window };
                 render.run_now(&self.world.res);
                 Ok(())
