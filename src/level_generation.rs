@@ -42,6 +42,20 @@ fn manhatten_distance(from: (i32, i32), to: (i32, i32)) -> i32 {
 }
 
 pub fn generate_level() -> GeneratedLevel {
+    loop {
+        match try_generate_level() {
+            Ok(l) => return l,
+            Err(e) => {
+                dbg!(e);
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
+struct StringErr(String);
+
+fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
     let mut rng = rand::thread_rng();
     let mut tile_map: TileMap = Default::default();
     // Assume start position is always 0, 0
@@ -69,6 +83,9 @@ pub fn generate_level() -> GeneratedLevel {
             }
         }
 
+        if choices.is_empty() {
+            return Err(StringErr("Got stuck with no choice loop 1".to_string()));
+        }
         assert!(!choices.is_empty());
 
         let index = rng.gen_range(0, choices.len());
@@ -96,7 +113,9 @@ pub fn generate_level() -> GeneratedLevel {
             }
         }
 
-        assert!(!choices.is_empty());
+        if choices.is_empty() {
+            return Err(StringErr("Got stuck with no choice loop 2".to_string()));
+        }
 
         let index = rng.gen_range(0, choices.len());
         let choice = choices[index];
@@ -111,19 +130,100 @@ pub fn generate_level() -> GeneratedLevel {
     for i in 0..path.len() - 1 {
         let dx = path[i + 1].0 - path[i].0;
         let dy = path[i + 1].1 - path[i].1;
-        let steps = (dx * 20).abs().max((dy * 20).abs());
-        for step in 0..steps {
-            tile_map.tiles.insert(
-                (path[i].0 * 20 + step * dx, path[i].1 * 20 + step * dy),
-                Tile {
-                    collision: false,
-                    colour: rgba!(223, 201, 96, 1.0),
-                },
-            );
+        if dx != 0 {
+            let steps = (dx * 20).abs() - 10;
+            for step in 0..steps {
+                let offset = if dx == 1 { 10 } else { -1 };
+                tile_map.tiles.insert(
+                    (
+                        path[i].0 * 20 + offset + step * dx,
+                        path[i].1 * 20 + 4 + step * dy,
+                    ),
+                    Tile {
+                        collision: true,
+                        colour: rgba!(128, 128, 128, 1.0),
+                    },
+                );
+                tile_map.tiles.insert(
+                    (
+                        path[i].0 * 20 + offset + step * dx,
+                        path[i].1 * 20 + 5 + step * dy,
+                    ),
+                    Tile {
+                        collision: false,
+                        colour: rgba!(223, 201, 96, 1.0),
+                    },
+                );
+                tile_map.tiles.insert(
+                    (
+                        path[i].0 * 20 + offset + step * dx,
+                        path[i].1 * 20 + 6 + step * dy,
+                    ),
+                    Tile {
+                        collision: false,
+                        colour: rgba!(223, 201, 96, 1.0),
+                    },
+                );
+                tile_map.tiles.insert(
+                    (
+                        path[i].0 * 20 + offset + step * dx,
+                        path[i].1 * 20 + 7 + step * dy,
+                    ),
+                    Tile {
+                        collision: true,
+                        colour: rgba!(128, 128, 128, 1.0),
+                    },
+                );
+            }
+        } else {
+            let steps = (dy * 20).abs() - 10;
+            for step in 0..steps {
+                let offset = if dy == 1 { 10 } else { -1 };
+                tile_map.tiles.insert(
+                    (
+                        path[i].0 * 20 + 4 + step * dx,
+                        path[i].1 * 20 + offset + step * dy,
+                    ),
+                    Tile {
+                        collision: true,
+                        colour: rgba!(128, 128, 128, 1.0),
+                    },
+                );
+                tile_map.tiles.insert(
+                    (
+                        path[i].0 * 20 + 5 + step * dx,
+                        path[i].1 * 20 + offset + step * dy,
+                    ),
+                    Tile {
+                        collision: false,
+                        colour: rgba!(223, 201, 96, 1.0),
+                    },
+                );
+                tile_map.tiles.insert(
+                    (
+                        path[i].0 * 20 + 6 + step * dx,
+                        path[i].1 * 20 + offset + step * dy,
+                    ),
+                    Tile {
+                        collision: false,
+                        colour: rgba!(223, 201, 96, 1.0),
+                    },
+                );
+                tile_map.tiles.insert(
+                    (
+                        path[i].0 * 20 + 7 + step * dx,
+                        path[i].1 * 20 + offset + step * dy,
+                    ),
+                    Tile {
+                        collision: true,
+                        colour: rgba!(128, 128, 128, 1.0),
+                    },
+                );
+            }
         }
     }
-    GeneratedLevel {
+    Ok(GeneratedLevel {
         tile_map,
         start_position: (5, 5),
-    }
+    })
 }

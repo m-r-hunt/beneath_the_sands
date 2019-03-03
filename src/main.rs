@@ -43,6 +43,9 @@ mod level_generation;
 mod world_generation;
 use world_generation::Dungeon;
 
+mod world_map;
+use world_map::WorldMapScreen;
+
 mod all_components {
     pub use crate::physics::{Bullet, HitBox, Movement};
     pub use crate::player::PlayerControls;
@@ -119,16 +122,22 @@ impl EventQueue {
     }
 }
 
-enum UIState {
+#[derive(Clone)]
+pub enum UIState {
     Title,
     WorldMap,
     Playing,
-    Pause(Dispatcher<'static, 'static>),
-    GameOver(Dispatcher<'static, 'static>),
+    Pause,
+    GameOver,
+}
+
+impl Default for UIState {
+    fn default() -> Self {
+        UIState::Title
+    }
 }
 
 struct GameState {
-    ui_state: UIState,
     world: World,
     dispatcher: Dispatcher<'static, 'static>,
     font: Font,
@@ -146,6 +155,11 @@ impl Camera {
             .position
             - window.screen_size() / 2.0
     }
+}
+
+#[derive(Default)]
+pub struct ScreenSize {
+    pub size: Vector,
 }
 
 impl State for GameState {
@@ -186,10 +200,11 @@ impl State for GameState {
         world.add_resource::<EventQueue>(Default::default());
         world.add_resource::<TileMap>(level.tile_map);
         world.add_resource(Camera { follow: player });
+        world.add_resource(UIState::Title);
+        world.add_resource::<ScreenSize>(Default::default());
 
         world_generation::generate_dungeons(&mut world);
         Ok(GameState {
-            ui_state: UIState::Title,
             world,
             dispatcher: make_dispatcher(),
             font,
@@ -211,18 +226,27 @@ impl State for GameState {
                     .get_position(&self.world.read_storage(), window),
         };
         self.world.add_resource(input);
+        self.world.add_resource(ScreenSize {
+            size: window.screen_size(),
+        });
 
-        match self.ui_state {
+        let ui_state = (*self.world.read_resource::<UIState>()).clone();
+        match ui_state {
             UIState::Title => {
                 if window.keyboard()[quicksilver::input::Key::Escape] == ButtonState::Pressed {
                     window.close();
                 }
                 if window.keyboard()[quicksilver::input::Key::Space] == ButtonState::Pressed {
-                    self.ui_state = UIState::WorldMap;
+                    self.world.add_resource(UIState::WorldMap);
                 }
                 Ok(())
             }
-            UIState::WorldMap => Ok(()),
+            UIState::WorldMap => {
+                use specs::RunNow;
+                let mut world_map_screen = WorldMapScreen;
+                world_map_screen.run_now(&self.world.res);
+                Ok(())
+            }
             UIState::Playing => {
                 // Noclip mode, a bit hacky.
                 if window.keyboard()[quicksilver::input::Key::N] == ButtonState::Pressed {
@@ -254,7 +278,7 @@ impl State for GameState {
 
         window.clear(quicksilver::graphics::Color::BLACK).unwrap();
 
-        match self.ui_state {
+        match self.world.read_resource::<UIState>().clone() {
             UIState::Title => {
                 draw_text_centered(
                     "Beneath The Sands",
