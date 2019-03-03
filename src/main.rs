@@ -1,7 +1,6 @@
 extern crate specs;
 
 use quicksilver::geom::Vector;
-use quicksilver::graphics::Color;
 use quicksilver::input::{ButtonState, MouseButton};
 use quicksilver::lifecycle::{run, Settings, State, Window};
 use specs::prelude::*;
@@ -9,9 +8,21 @@ use specs::prelude::*;
 const SCREEN_WIDTH: f32 = 800.0;
 const SCREEN_HEIGHT: f32 = 600.0;
 
+macro_rules! rgba {
+    ($r:expr, $g:expr, $b: expr, $a: expr) => {
+        quicksilver::graphics::Color {
+            r: $r as f32 / 255.0,
+            g: $g as f32 / 255.0,
+            b: $b as f32 / 255.0,
+            a: $a,
+        }
+    };
+}
+
 mod physics;
 use physics::{
-    Bullet, CollidingWithWall, CollisionDetection, HitBox, Movement, MovementSystem, Tile, TileMap,
+    Bullet, CollidingWithWall, CollisionDetection, HitBox, Movement, MovementSystem, TileMap,
+    TILE_SIZE,
 };
 
 mod player;
@@ -25,6 +36,8 @@ use render::{Render, RenderComponent, RenderCursor, TileMapRender};
 
 mod prefabs;
 use prefabs::PrefabBuilder;
+
+mod level_generation;
 
 mod all_components {
     pub use crate::physics::{Bullet, HitBox, Movement};
@@ -106,17 +119,6 @@ struct GameState {
     dispatcher: Dispatcher<'static, 'static>,
 }
 
-macro_rules! rgba {
-    ($r:expr, $g:expr, $b: expr, $a: expr) => {
-        Color {
-            r: $r as f32 / 255.0,
-            g: $g as f32 / 255.0,
-            b: $b as f32 / 255.0,
-            a: $a,
-        }
-    };
-}
-
 pub struct Camera {
     follow: Entity,
 }
@@ -133,6 +135,8 @@ impl Camera {
 
 impl State for GameState {
     fn new() -> quicksilver::Result<Self> {
+        let level = level_generation::generate_level();
+
         let mut world = World::new();
         world.register::<Movement>();
         world.register::<PlayerControls>();
@@ -144,7 +148,7 @@ impl State for GameState {
             .create_entity()
             .with_player_prefab()
             .with(Movement {
-                position: Vector::new(SCREEN_WIDTH / 2.0, SCREEN_HEIGHT - 100.0),
+                position: Vector::from(level.start_position) * TILE_SIZE,
                 velocity: Vector::new(0.0, 0.0),
             })
             .build();
@@ -159,14 +163,7 @@ impl State for GameState {
         world.add_resource::<Input>(Default::default());
         world.add_resource::<SimTime>(Default::default());
         world.add_resource::<EventQueue>(Default::default());
-        world.add_resource::<TileMap>(Default::default());
-        world.write_resource::<TileMap>().tiles.insert(
-            (0, 0),
-            Tile {
-                collision: true,
-                colour: rgba!(103, 126, 152, 1.0),
-            },
-        );
+        world.add_resource::<TileMap>(level.tile_map);
         world.add_resource(Camera { follow: player });
         Ok(GameState {
             ui_state: UIState::Playing,
@@ -187,6 +184,19 @@ impl State for GameState {
                 Ok(())
             }
             UIState::Playing => {
+                // Noclip mode, a bit hacky.
+                if window.keyboard()[quicksilver::input::Key::N] == ButtonState::Pressed {
+                    let player = self.world.read_resource::<Camera>().follow;
+                    if self.world.read_storage::<HitBox>().get(player).is_some() {
+                        self.world.write_storage::<HitBox>().remove(player);
+                    } else {
+                        self.world
+                            .write_storage::<HitBox>()
+                            .insert(player, HitBox { radius: 20.0 })
+                            .expect("Player should be alive"); // TODO Don't hardcode radius
+                    }
+                }
+
                 let input = Input {
                     down: window.keyboard()[quicksilver::input::Key::S].is_down(),
                     left: window.keyboard()[quicksilver::input::Key::A].is_down(),

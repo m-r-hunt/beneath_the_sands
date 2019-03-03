@@ -2263,6 +2263,7 @@ version = "0.1.0"
 dependencies = [
  "handlebars 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "quicksilver 0.3.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "ron 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.88 (registry+https://github.com/rust-lang/crates.io-index)",
  "specs 0.14.3 (registry+https://github.com/rust-lang/crates.io-index)",

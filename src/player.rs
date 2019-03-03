@@ -4,7 +4,7 @@ use crate::prefabs::PrefabBuilder;
 use quicksilver::geom::Vector;
 use specs::prelude::*;
 
-const PLAYER_SPEED: f32 = 2.0;
+const PLAYER_SPEED: f32 = 5.0;
 
 #[derive(Default)]
 pub struct PlayerControls {
