@@ -1,6 +1,7 @@
 extern crate specs;
 
 use quicksilver::geom::Vector;
+use quicksilver::graphics::{Color, Font, FontStyle};
 use quicksilver::input::{ButtonState, MouseButton};
 use quicksilver::lifecycle::{run, Settings, State, Window};
 use specs::prelude::*;
@@ -108,6 +109,7 @@ impl EventQueue {
 
 enum UIState {
     Title,
+    WorldMap,
     Playing,
     Pause(Dispatcher<'static, 'static>),
     GameOver(Dispatcher<'static, 'static>),
@@ -117,6 +119,7 @@ struct GameState {
     ui_state: UIState,
     world: World,
     dispatcher: Dispatcher<'static, 'static>,
+    font: Font,
 }
 
 pub struct Camera {
@@ -136,6 +139,9 @@ impl Camera {
 impl State for GameState {
     fn new() -> quicksilver::Result<Self> {
         let level = level_generation::generate_level();
+
+        let font =
+            Font::from_slice(include_bytes!("fonts/fonts/OpenSans/OpenSans-Regular.ttf")).unwrap();
 
         let mut world = World::new();
         world.register::<Movement>();
@@ -166,9 +172,10 @@ impl State for GameState {
         world.add_resource::<TileMap>(level.tile_map);
         world.add_resource(Camera { follow: player });
         Ok(GameState {
-            ui_state: UIState::Playing,
+            ui_state: UIState::Title,
             world,
             dispatcher: make_dispatcher(),
+            font,
         })
     }
 
@@ -226,7 +233,18 @@ impl State for GameState {
         use specs::RunNow;
 
         match self.ui_state {
-            UIState::Title => Ok(()),
+            UIState::Title => {
+                window.clear(quicksilver::graphics::Color::BLACK).unwrap();
+                draw_text_centered(
+                    "Beneath The Sands",
+                    Vector::new(400, 300),
+                    &self.font,
+                    window,
+                );
+                draw_text_centered("Space to Start", Vector::new(400, 350), &self.font, window);
+                draw_text_centered("Esc to Quit", Vector::new(400, 400), &self.font, window);
+                Ok(())
+            }
             UIState::Playing => {
                 window.clear(quicksilver::graphics::Color::BLACK).unwrap();
                 let mut tilemap_render = TileMapRender { window };
@@ -240,6 +258,15 @@ impl State for GameState {
             _ => panic!("Unimplented ui state"),
         }
     }
+}
+
+fn draw_text_centered(text: &str, position: Vector, font: &Font, window: &mut Window) {
+    let img = font
+        .render(text, &FontStyle::new(32.0, Color::WHITE))
+        .unwrap();
+    let mut rect = img.area();
+    rect.pos = position - rect.size / 2.0;
+    window.draw(&rect, quicksilver::graphics::Background::Img(&img));
 }
 
 fn make_dispatcher<'a, 'b>() -> Dispatcher<'a, 'b> {

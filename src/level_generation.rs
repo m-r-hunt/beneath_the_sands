@@ -74,7 +74,7 @@ pub fn generate_level() -> GeneratedLevel {
         let index = rng.gen_range(0, choices.len());
         let choice = choices[index];
         current_pos = (current_pos.0 + choice.0, current_pos.1 + choice.1);
-        path.push(dbg!(current_pos));
+        path.push(current_pos);
     }
 
     while manhatten_distance(current_pos, start) != 1 {
@@ -101,7 +101,7 @@ pub fn generate_level() -> GeneratedLevel {
         let index = rng.gen_range(0, choices.len());
         let choice = choices[index];
         current_pos = (current_pos.0 + choice.0, current_pos.1 + choice.1);
-        path.push(dbg!(current_pos));
+        path.push(current_pos);
     }
     path.push(start);
 
