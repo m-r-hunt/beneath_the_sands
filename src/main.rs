@@ -33,17 +33,28 @@ mod gameplay;
 use gameplay::{BulletSelfDestruct, CollisionHandler};
 
 mod render;
-use render::{Render, RenderComponent, RenderCursor, TileMapRender};
+use render::{Render, RenderComponent, RenderCursor, TileMapRender, WorldMapRender};
 
 mod prefabs;
 use prefabs::PrefabBuilder;
 
 mod level_generation;
 
+mod world_generation;
+use world_generation::Dungeon;
+
 mod all_components {
     pub use crate::physics::{Bullet, HitBox, Movement};
     pub use crate::player::PlayerControls;
     pub use crate::render::RenderComponent;
+}
+
+mod prelude {
+    pub use crate::physics::Movement;
+    pub use quicksilver::geom::*;
+    pub use quicksilver::graphics::Color;
+    pub use rand::Rng;
+    pub use specs::*;
 }
 
 #[derive(Copy, Clone, Debug, Default)]
@@ -80,6 +91,7 @@ pub struct Input {
     up: bool,
     down: bool,
     fire: bool,
+    raw_mouse_pos: Vector,
     mouse_pos: Vector,
 }
 
@@ -144,12 +156,15 @@ impl State for GameState {
             Font::from_slice(include_bytes!("fonts/fonts/OpenSans/OpenSans-Regular.ttf")).unwrap();
 
         let mut world = World::new();
+
         world.register::<Movement>();
         world.register::<PlayerControls>();
         world.register::<RenderComponent>();
         world.register::<HitBox>();
         world.register::<Bullet>();
         world.register::<CollidingWithWall>();
+        world.register::<Dungeon>();
+
         let player = world
             .create_entity()
             .with_player_prefab()
@@ -171,6 +186,8 @@ impl State for GameState {
         world.add_resource::<EventQueue>(Default::default());
         world.add_resource::<TileMap>(level.tile_map);
         world.add_resource(Camera { follow: player });
+
+        world_generation::generate_dungeons(&mut world);
         Ok(GameState {
             ui_state: UIState::Title,
             world,
@@ -180,16 +197,32 @@ impl State for GameState {
     }
 
     fn update(&mut self, window: &mut Window) -> quicksilver::Result<()> {
+        let input = Input {
+            down: window.keyboard()[quicksilver::input::Key::S].is_down(),
+            left: window.keyboard()[quicksilver::input::Key::A].is_down(),
+            up: window.keyboard()[quicksilver::input::Key::W].is_down(),
+            right: window.keyboard()[quicksilver::input::Key::D].is_down(),
+            fire: window.mouse()[MouseButton::Left].is_down(),
+            raw_mouse_pos: window.mouse().pos(),
+            mouse_pos: window.mouse().pos()
+                + self
+                    .world
+                    .read_resource::<Camera>()
+                    .get_position(&self.world.read_storage(), window),
+        };
+        self.world.add_resource(input);
+
         match self.ui_state {
             UIState::Title => {
                 if window.keyboard()[quicksilver::input::Key::Escape] == ButtonState::Pressed {
                     window.close();
                 }
                 if window.keyboard()[quicksilver::input::Key::Space] == ButtonState::Pressed {
-                    self.ui_state = UIState::Playing;
+                    self.ui_state = UIState::WorldMap;
                 }
                 Ok(())
             }
+            UIState::WorldMap => Ok(()),
             UIState::Playing => {
                 // Noclip mode, a bit hacky.
                 if window.keyboard()[quicksilver::input::Key::N] == ButtonState::Pressed {
@@ -204,19 +237,6 @@ impl State for GameState {
                     }
                 }
 
-                let input = Input {
-                    down: window.keyboard()[quicksilver::input::Key::S].is_down(),
-                    left: window.keyboard()[quicksilver::input::Key::A].is_down(),
-                    up: window.keyboard()[quicksilver::input::Key::W].is_down(),
-                    right: window.keyboard()[quicksilver::input::Key::D].is_down(),
-                    fire: window.mouse()[MouseButton::Left].is_down(),
-                    mouse_pos: window.mouse().pos()
-                        + self
-                            .world
-                            .read_resource::<Camera>()
-                            .get_position(&self.world.read_storage(), window),
-                };
-                self.world.add_resource(input);
                 let mut sim_time = *self.world.read_resource::<SimTime>();
                 sim_time.time += 1.0 / 60.0; // Quicksilver tries to call at 60fps
                 self.world.add_resource(sim_time);
@@ -232,9 +252,10 @@ impl State for GameState {
     fn draw(&mut self, window: &mut Window) -> quicksilver::Result<()> {
         use specs::RunNow;
 
+        window.clear(quicksilver::graphics::Color::BLACK).unwrap();
+
         match self.ui_state {
             UIState::Title => {
-                window.clear(quicksilver::graphics::Color::BLACK).unwrap();
                 draw_text_centered(
                     "Beneath The Sands",
                     Vector::new(400, 300),
@@ -245,8 +266,12 @@ impl State for GameState {
                 draw_text_centered("Esc to Quit", Vector::new(400, 400), &self.font, window);
                 Ok(())
             }
+            UIState::WorldMap => {
+                let mut world_map_render = WorldMapRender { window };
+                world_map_render.run_now(&self.world.res);
+                Ok(())
+            }
             UIState::Playing => {
-                window.clear(quicksilver::graphics::Color::BLACK).unwrap();
                 let mut tilemap_render = TileMapRender { window };
                 tilemap_render.run_now(&self.world.res);
                 let mut render = Render { window };

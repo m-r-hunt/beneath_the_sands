@@ -1,7 +1,8 @@
 use super::physics::Movement;
 use crate::physics::{TileMap, TILE_SIZE};
+use crate::world_generation::Dungeon;
 use crate::{Camera, Input};
-use quicksilver::geom::{Line, Vector};
+use quicksilver::geom::{Circle, Line, Rectangle, Vector};
 use quicksilver::graphics::Color;
 use quicksilver::lifecycle::Window;
 use specs::prelude::*;
@@ -70,8 +71,7 @@ impl<'a: 'b, 'b> System<'b> for Render<'a> {
     fn run(&mut self, (camera, movements, render): Self::SystemData) {
         let camera_pos = camera.get_position(&movements, self.window);
         for (movement, render) in (&movements, &render).join() {
-            let circle =
-                quicksilver::geom::Circle::new(movement.position - camera_pos, render.radius);
+            let circle = Circle::new(movement.position - camera_pos, render.radius);
             self.window.draw(
                 &circle,
                 quicksilver::graphics::Background::Col(render.colour),
@@ -84,6 +84,43 @@ pub struct RenderCursor<'a> {
     pub window: &'a mut Window,
 }
 
+fn draw_cursor(cursor_pos: Vector, window: &mut Window) {
+    //   |
+    //   |
+    // -- --
+    //   |
+    //   |
+    // TODO: Figure out what's going on with line rendering to make the cursor symmetrical.
+    window.draw(
+        &Line::new(
+            cursor_pos + Vector::new(0, 0),
+            cursor_pos + Vector::new(2, 0),
+        ),
+        quicksilver::graphics::Background::Col(Color::WHITE),
+    );
+    window.draw(
+        &Line::new(
+            cursor_pos + Vector::new(-1, 0),
+            cursor_pos + Vector::new(-3, 0),
+        ),
+        quicksilver::graphics::Background::Col(Color::WHITE),
+    );
+    window.draw(
+        &Line::new(
+            cursor_pos + Vector::new(0, 0),
+            cursor_pos + Vector::new(0, 2),
+        ),
+        quicksilver::graphics::Background::Col(Color::WHITE),
+    );
+    window.draw(
+        &Line::new(
+            cursor_pos + Vector::new(0, -1),
+            cursor_pos + Vector::new(0, -3),
+        ),
+        quicksilver::graphics::Background::Col(Color::WHITE),
+    );
+}
+
 impl<'a: 'b, 'b> System<'b> for RenderCursor<'a> {
     type SystemData = (
         ReadExpect<'b, Camera>,
@@ -94,40 +131,32 @@ impl<'a: 'b, 'b> System<'b> for RenderCursor<'a> {
     fn run(&mut self, (camera, input, movements): Self::SystemData) {
         let camera_pos = camera.get_position(&movements, self.window);
         let cursor_pos = input.mouse_pos - camera_pos;
+        draw_cursor(cursor_pos, self.window);
+    }
+}
 
-        //   |
-        //   |
-        // -- --
-        //   |
-        //   |
-        // TODO: Figure out what's going on with line rendering to make the cursor symmetrical.
-        self.window.draw(
-            &Line::new(
-                cursor_pos + Vector::new(0, 0),
-                cursor_pos + Vector::new(2, 0),
-            ),
-            quicksilver::graphics::Background::Col(Color::WHITE),
-        );
-        self.window.draw(
-            &Line::new(
-                cursor_pos + Vector::new(-1, 0),
-                cursor_pos + Vector::new(-3, 0),
-            ),
-            quicksilver::graphics::Background::Col(Color::WHITE),
-        );
-        self.window.draw(
-            &Line::new(
-                cursor_pos + Vector::new(0, 0),
-                cursor_pos + Vector::new(0, 2),
-            ),
-            quicksilver::graphics::Background::Col(Color::WHITE),
-        );
-        self.window.draw(
-            &Line::new(
-                cursor_pos + Vector::new(0, -1),
-                cursor_pos + Vector::new(0, -3),
-            ),
-            quicksilver::graphics::Background::Col(Color::WHITE),
-        );
+pub struct WorldMapRender<'a> {
+    pub window: &'a mut Window,
+}
+
+impl<'a: 'b, 'b> System<'b> for WorldMapRender<'a> {
+    type SystemData = (Read<'b, Input>, ReadStorage<'b, Dungeon>);
+
+    fn run(&mut self, (input, dungeons): Self::SystemData) {
+        let screen_size = self.window.screen_size();
+        let offset = screen_size / 2.0;
+
+        // Draw oasis
+        let circle = Circle::new(offset, 10.0);
+        self.window
+            .draw(&circle, quicksilver::graphics::Background::Col(Color::BLUE));
+
+        for d in dungeons.join() {
+            let rect = Rectangle::new(d.position + offset, Vector::new(10.0, 10.0));
+            self.window
+                .draw(&rect, quicksilver::graphics::Background::Col(Color::GREEN));
+        }
+
+        draw_cursor(input.raw_mouse_pos, self.window);
     }
 }
