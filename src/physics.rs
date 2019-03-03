@@ -83,8 +83,8 @@ fn check_collision(position: Vector, hitbox: &HitBox, tilemap: &TileMap) -> bool
                 .unwrap_or_default()
                 .collision
                 && hitcircle.overlaps(&Rectangle::new(
-                    (tile_x as f32 * TILE_SIZE, (tile_x + 1) as f32 * TILE_SIZE),
-                    (tile_y as f32 * TILE_SIZE, (tile_y + 1) as f32 * TILE_SIZE),
+                    (tile_x as f32 * TILE_SIZE, (tile_y) as f32 * TILE_SIZE),
+                    (TILE_SIZE, TILE_SIZE),
                 ))
             {
                 return true;
