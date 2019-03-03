@@ -35,16 +35,27 @@ impl Component for HitBox {
     type Storage = VecStorage<Self>;
 }
 
+pub struct CollidingWithWall;
+
+impl Component for CollidingWithWall {
+    type Storage = HashMapStorage<Self>;
+}
+
 pub struct MovementSystem;
 
 impl<'a> System<'a> for MovementSystem {
     type SystemData = (
+        Entities<'a>,
         WriteStorage<'a, Movement>,
         ReadStorage<'a, HitBox>,
         Read<'a, TileMap>,
+        WriteStorage<'a, CollidingWithWall>,
     );
 
-    fn run(&mut self, (mut movements, hitboxes, tilemap): Self::SystemData) {
+    fn run(
+        &mut self,
+        (entities, mut movements, hitboxes, tilemap, mut colliding_with_walls): Self::SystemData,
+    ) {
         for (movement, hitbox) in (&mut movements, &hitboxes).join() {
             let new_position = movement.position + movement.velocity;
             let colliding = check_collision(new_position, hitbox, &tilemap);
@@ -55,12 +66,31 @@ impl<'a> System<'a> for MovementSystem {
             }
         }
 
-        for (movement, _) in (&mut movements, !&hitboxes).join() {
+        for (entity, movement, _) in (&entities, &mut movements, !&hitboxes).join() {
             let new_position = movement.position + movement.velocity;
-            // TODO: Collide non-hitbox movers?
             movement.position = new_position;
+
+            let colliding = check_point_collision(new_position, &tilemap);
+            if colliding {
+                colliding_with_walls
+                    .insert(entity, CollidingWithWall)
+                    .expect("This entity should exists because we just got it from specs");
+            } else {
+                colliding_with_walls.remove(entity);
+            }
         }
     }
+}
+
+fn check_point_collision(position: Vector, tilemap: &TileMap) -> bool {
+    let tile_x = (position.x / TILE_SIZE).floor() as i32;
+    let tile_y = (position.y / TILE_SIZE).floor() as i32;
+    tilemap
+        .tiles
+        .get(&(tile_x, tile_y))
+        .cloned()
+        .unwrap_or_default()
+        .collision
 }
 
 fn check_collision(position: Vector, hitbox: &HitBox, tilemap: &TileMap) -> bool {

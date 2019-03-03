@@ -4,22 +4,24 @@ use quicksilver::geom::Vector;
 use quicksilver::graphics::Color;
 use quicksilver::input::{ButtonState, MouseButton};
 use quicksilver::lifecycle::{run, Settings, State, Window};
-use specs::{Builder, Dispatcher, DispatcherBuilder, Entity, World};
+use specs::prelude::*;
 
 const SCREEN_WIDTH: f32 = 800.0;
 const SCREEN_HEIGHT: f32 = 600.0;
 
 mod physics;
-use physics::{Bullet, CollisionDetection, HitBox, Movement, MovementSystem, Tile, TileMap};
+use physics::{
+    Bullet, CollidingWithWall, CollisionDetection, HitBox, Movement, MovementSystem, Tile, TileMap,
+};
 
 mod player;
 use player::{PlayerControlSystem, PlayerControls};
 
 mod gameplay;
-use gameplay::CollisionHandler;
+use gameplay::{BulletSelfDestruct, CollisionHandler};
 
 mod render;
-use render::{Render, RenderComponent, TileMapRender};
+use render::{Render, RenderComponent, RenderCursor, TileMapRender};
 
 mod prefabs;
 use prefabs::PrefabBuilder;
@@ -104,6 +106,31 @@ struct GameState {
     dispatcher: Dispatcher<'static, 'static>,
 }
 
+macro_rules! rgba {
+    ($r:expr, $g:expr, $b: expr, $a: expr) => {
+        Color {
+            r: $r as f32 / 255.0,
+            g: $g as f32 / 255.0,
+            b: $b as f32 / 255.0,
+            a: $a,
+        }
+    };
+}
+
+pub struct Camera {
+    follow: Entity,
+}
+
+impl Camera {
+    fn get_position<'a>(&self, movements: &ReadStorage<'a, Movement>, window: &Window) -> Vector {
+        movements
+            .get(self.follow)
+            .expect("TODO: Remember where the camera was last and don't crash")
+            .position
+            - window.screen_size() / 2.0
+    }
+}
+
 impl State for GameState {
     fn new() -> quicksilver::Result<Self> {
         let mut world = World::new();
@@ -112,7 +139,8 @@ impl State for GameState {
         world.register::<RenderComponent>();
         world.register::<HitBox>();
         world.register::<Bullet>();
-        world
+        world.register::<CollidingWithWall>();
+        let player = world
             .create_entity()
             .with_player_prefab()
             .with(Movement {
@@ -136,9 +164,10 @@ impl State for GameState {
             (0, 0),
             Tile {
                 collision: true,
-                colour: Color::WHITE,
+                colour: rgba!(103, 126, 152, 1.0),
             },
         );
+        world.add_resource(Camera { follow: player });
         Ok(GameState {
             ui_state: UIState::Playing,
             world,
@@ -164,7 +193,11 @@ impl State for GameState {
                     up: window.keyboard()[quicksilver::input::Key::W].is_down(),
                     right: window.keyboard()[quicksilver::input::Key::D].is_down(),
                     fire: window.mouse()[MouseButton::Left].is_down(),
-                    mouse_pos: window.mouse().pos(),
+                    mouse_pos: window.mouse().pos()
+                        + self
+                            .world
+                            .read_resource::<Camera>()
+                            .get_position(&self.world.read_storage(), window),
                 };
                 self.world.add_resource(input);
                 let mut sim_time = *self.world.read_resource::<SimTime>();
@@ -190,6 +223,8 @@ impl State for GameState {
                 tilemap_render.run_now(&self.world.res);
                 let mut render = Render { window };
                 render.run_now(&self.world.res);
+                let mut render_cursor = RenderCursor { window };
+                render_cursor.run_now(&self.world.res);
                 Ok(())
             }
             _ => panic!("Unimplented ui state"),
@@ -201,12 +236,13 @@ fn make_dispatcher<'a, 'b>() -> Dispatcher<'a, 'b> {
     DispatcherBuilder::new()
         .with(PlayerControlSystem, "player_control", &[])
         .with(MovementSystem, "movement", &["player_control"])
-        .with(CollisionDetection, "collision_detection", &[])
+        .with(CollisionDetection, "collision_detection", &["movement"])
         .with(
             CollisionHandler,
             "collision_handler",
             &["collision_detection"],
         )
+        .with(BulletSelfDestruct, "bullet_self_destruct", &["movement"])
         .build()
 }
 
