@@ -279,7 +279,7 @@ impl State for GameState {
                 sim_time.time += 1.0 / 60.0; // Quicksilver tries to call at 60fps
                 self.world.add_resource(sim_time);
                 self.world.write_resource::<EventQueue>().clear();
-                self.dispatcher.dispatch_seq(&self.world.res);
+                self.dispatcher.dispatch(&self.world.res);
                 self.world.maintain();
                 Ok(())
             }
