@@ -161,6 +161,8 @@ impl<'a: 'b, 'b> System<'b> for WorldMapRender<'a> {
                 &rect,
                 quicksilver::graphics::Background::Col(if d.completed {
                     Color::GREEN
+                } else if d.reward {
+                    Color::ORANGE
                 } else {
                     Color::RED
                 }),

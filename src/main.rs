@@ -140,6 +140,7 @@ pub enum UIState {
     Playing,
     Pause,
     GameOver,
+    Victory,
 }
 
 impl Default for UIState {
@@ -295,6 +296,14 @@ impl State for GameState {
                 self.world.maintain();
                 Ok(())
             }
+            UIState::Victory => {
+                if window.keyboard()[quicksilver::input::Key::Space] == ButtonState::Pressed
+                    || window.keyboard()[quicksilver::input::Key::Escape] == ButtonState::Pressed
+                {
+                    self.world.add_resource(UIState::Title);
+                }
+                Ok(())
+            }
             _ => panic!("Unimplemented ui state"),
         }
     }
@@ -328,6 +337,16 @@ impl State for GameState {
                 render.run_now(&self.world.res);
                 let mut render_cursor = RenderCursor { window };
                 render_cursor.run_now(&self.world.res);
+                Ok(())
+            }
+            UIState::Victory => {
+                draw_text_centered("YOU WIN! :)", Vector::new(400, 300), &self.font, window);
+                draw_text_centered(
+                    "Space or Esc to return to title",
+                    Vector::new(400, 350),
+                    &self.font,
+                    window,
+                );
                 Ok(())
             }
             _ => panic!("Unimplented ui state"),

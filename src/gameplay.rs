@@ -3,7 +3,7 @@ use crate::player::PlayerControls;
 use crate::prelude::*;
 use crate::world_generation::Dungeon;
 use crate::UIState;
-use crate::{CurrentDungeon, Event, EventQueue};
+use crate::{CurrentDungeon, Event, EventQueue, PlayerProgression};
 
 #[derive(Default)]
 pub struct Destructable;
@@ -63,6 +63,8 @@ impl Component for Exit {
 
 pub struct ExitSystem;
 
+// It's possible I should decompose this with an event being fired and handled elsewhere.
+// This has a lot of game logic stuffed into basically a collision check with the stairs...
 impl<'a> System<'a> for ExitSystem {
     type SystemData = (
         ReadStorage<'a, Movement>,
@@ -72,11 +74,21 @@ impl<'a> System<'a> for ExitSystem {
         ReadStorage<'a, HitBox>,
         Write<'a, CurrentDungeon>,
         WriteStorage<'a, Dungeon>,
+        Write<'a, PlayerProgression>,
     );
 
     fn run(
         &mut self,
-        (movements, exits, players, mut ui_state, hitboxes, current_dungeon, mut dungeons): Self::SystemData,
+        (
+            movements,
+            exits,
+            players,
+            mut ui_state,
+            hitboxes,
+            current_dungeon,
+            mut dungeons,
+            mut progression,
+        ): Self::SystemData,
     ) {
         for (exit_movement, exit_hitbox, _) in (&movements, &hitboxes, &exits).join() {
             for (player_movement, player_hitbox, _) in (&movements, &hitboxes, &players).join() {
@@ -85,10 +97,15 @@ impl<'a> System<'a> for ExitSystem {
                     let current_dungeon = current_dungeon
                         .entity
                         .expect("We should be playing a dungeon when we hit an exit.");
-                    dungeons
+                    let current_dungeon = dungeons
                         .get_mut(current_dungeon)
-                        .expect("The current dungeon should be valid when hitting an exit.")
-                        .completed = true;
+                        .expect("The current dungeon should be valid when hitting an exit.");
+                    current_dungeon.completed = true;
+                    if current_dungeon.reward && !progression.range_extended {
+                        progression.range_extended = true;
+                    } else {
+                        *ui_state = UIState::Victory;
+                    }
                 }
             }
         }
