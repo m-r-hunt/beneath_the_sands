@@ -2,9 +2,9 @@
 
 extern crate specs;
 
-use quicksilver::graphics::{Font, FontStyle};
+use quicksilver::graphics::{Font, FontStyle, Image};
 use quicksilver::input::{ButtonState, MouseButton};
-use quicksilver::lifecycle::{run, Settings, State, Window};
+use quicksilver::lifecycle::{run, Asset, Settings, State, Window};
 
 const SCREEN_WIDTH: f32 = 800.0;
 const SCREEN_HEIGHT: f32 = 600.0;
@@ -147,6 +147,7 @@ struct GameState {
     world: World,
     dispatcher: Dispatcher<'static, 'static>,
     font: Font,
+    title_image: Asset<Image>,
 }
 
 pub struct Camera {
@@ -170,6 +171,7 @@ pub struct ScreenSize {
 
 impl State for GameState {
     fn new() -> quicksilver::Result<Self> {
+        let title_image = Asset::new(Image::load("title.png"));
         let level = level_generation::generate_level();
 
         let font =
@@ -229,6 +231,7 @@ impl State for GameState {
             world,
             dispatcher: make_dispatcher(),
             font,
+            title_image,
         })
     }
 
@@ -309,12 +312,13 @@ impl State for GameState {
 
         match self.world.read_resource::<UIState>().clone() {
             UIState::Title => {
-                draw_text_centered(
-                    "Beneath The Sands",
-                    Vector::new(400, 300),
-                    &self.font,
-                    window,
-                );
+                self.title_image.execute(|image| {
+                    window.draw(
+                        &image.area().with_center((400, 300)),
+                        quicksilver::graphics::Background::Img(&image),
+                    );
+                    Ok(())
+                })?;
                 draw_text_centered("Space to Start", Vector::new(400, 350), &self.font, window);
                 draw_text_centered("Esc to Quit", Vector::new(400, 400), &self.font, window);
                 Ok(())
