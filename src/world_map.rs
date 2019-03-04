@@ -3,7 +3,7 @@ use crate::physics::TileMap;
 use crate::player::PlayerControls;
 use crate::prelude::*;
 use crate::world_generation::Dungeon;
-use crate::{Input, ScreenSize, UIState, TILE_SIZE};
+use crate::{CurrentDungeon, Input, ScreenSize, UIState, TILE_SIZE};
 
 pub struct WorldMapScreen;
 
@@ -18,6 +18,7 @@ impl<'a> System<'a> for WorldMapScreen {
         WriteStorage<'a, Movement>,
         Read<'a, LazyUpdate>,
         Entities<'a>,
+        Write<'a, CurrentDungeon>,
     );
 
     fn run(
@@ -32,11 +33,12 @@ impl<'a> System<'a> for WorldMapScreen {
             mut movements,
             lazy_update,
             entities,
+            mut current_dungeon,
         ): Self::SystemData,
     ) {
         let offset = screen_size.size / 2.0;
         let mouse_pos = input.raw_mouse_pos - offset;
-        for d in dungeons.join() {
+        for (e, d) in (&entities, &dungeons).join() {
             if input.fire && (d.position - mouse_pos).len2() < 10.0 * 10.0 {
                 *ui_state = UIState::Playing;
                 let level = generate_level();
@@ -55,6 +57,7 @@ impl<'a> System<'a> for WorldMapScreen {
                         velocity: Vector::new(0.0, 0.0),
                     })
                     .build();
+                current_dungeon.entity = Some(e);
             }
         }
     }

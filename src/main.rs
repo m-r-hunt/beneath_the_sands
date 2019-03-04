@@ -71,6 +71,16 @@ pub struct Timer {
     expire_time: f32,
 }
 
+#[derive(Default)]
+pub struct CurrentDungeon {
+    pub entity: Option<Entity>,
+}
+
+#[derive(Default)]
+pub struct PlayerProgression {
+    pub range_extended: bool,
+}
+
 impl Timer {
     #[allow(dead_code)]
     fn new_set(sim_time: SimTime, duration: f32) -> Timer {
@@ -216,6 +226,8 @@ impl State for GameState {
         world.add_resource(Camera { follow: player });
         world.add_resource(UIState::Title);
         world.add_resource::<ScreenSize>(Default::default());
+        world.add_resource::<PlayerProgression>(Default::default());
+        world.add_resource::<CurrentDungeon>(Default::default());
 
         world_generation::generate_dungeons(&mut world);
         Ok(GameState {

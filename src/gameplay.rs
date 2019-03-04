@@ -1,8 +1,9 @@
 use crate::physics::{hitbox_overlap, Bullet, CollidingWithWall, HitBox};
 use crate::player::PlayerControls;
 use crate::prelude::*;
+use crate::world_generation::Dungeon;
 use crate::UIState;
-use crate::{Event, EventQueue};
+use crate::{CurrentDungeon, Event, EventQueue};
 
 #[derive(Default)]
 pub struct Destructable;
@@ -69,13 +70,25 @@ impl<'a> System<'a> for ExitSystem {
         ReadStorage<'a, PlayerControls>,
         Write<'a, UIState>,
         ReadStorage<'a, HitBox>,
+        Write<'a, CurrentDungeon>,
+        WriteStorage<'a, Dungeon>,
     );
 
-    fn run(&mut self, (movements, exits, players, mut ui_state, hitboxes): Self::SystemData) {
+    fn run(
+        &mut self,
+        (movements, exits, players, mut ui_state, hitboxes, current_dungeon, mut dungeons): Self::SystemData,
+    ) {
         for (exit_movement, exit_hitbox, _) in (&movements, &hitboxes, &exits).join() {
             for (player_movement, player_hitbox, _) in (&movements, &hitboxes, &players).join() {
                 if hitbox_overlap(player_movement, player_hitbox, exit_movement, exit_hitbox) {
                     *ui_state = UIState::WorldMap;
+                    let current_dungeon = current_dungeon
+                        .entity
+                        .expect("We should be playing a dungeon when we hit an exit.");
+                    dungeons
+                        .get_mut(current_dungeon)
+                        .expect("The current dungeon should be valid when hitting an exit.")
+                        .completed = true;
                 }
             }
         }

@@ -1,7 +1,7 @@
 use super::physics::Movement;
 use crate::physics::{TileMap, TILE_SIZE};
-use crate::world_generation::Dungeon;
-use crate::{Camera, Input};
+use crate::world_generation::{Dungeon, RANGE1, RANGE2};
+use crate::{Camera, Input, PlayerProgression};
 use quicksilver::geom::{Circle, Line, Rectangle, Vector};
 use quicksilver::graphics::Color;
 use quicksilver::lifecycle::Window;
@@ -140,9 +140,13 @@ pub struct WorldMapRender<'a> {
 }
 
 impl<'a: 'b, 'b> System<'b> for WorldMapRender<'a> {
-    type SystemData = (Read<'b, Input>, ReadStorage<'b, Dungeon>);
+    type SystemData = (
+        Read<'b, Input>,
+        ReadStorage<'b, Dungeon>,
+        Read<'b, PlayerProgression>,
+    );
 
-    fn run(&mut self, (input, dungeons): Self::SystemData) {
+    fn run(&mut self, (input, dungeons, progress): Self::SystemData) {
         let screen_size = self.window.screen_size();
         let offset = screen_size / 2.0;
 
@@ -153,9 +157,28 @@ impl<'a: 'b, 'b> System<'b> for WorldMapRender<'a> {
 
         for d in dungeons.join() {
             let rect = Rectangle::new(d.position + offset, Vector::new(10.0, 10.0));
-            self.window
-                .draw(&rect, quicksilver::graphics::Background::Col(Color::GREEN));
+            self.window.draw(
+                &rect,
+                quicksilver::graphics::Background::Col(if d.completed {
+                    Color::GREEN
+                } else {
+                    Color::RED
+                }),
+            );
         }
+
+        let circle = Circle::new(
+            offset,
+            if progress.range_extended {
+                RANGE2
+            } else {
+                RANGE1
+            },
+        );
+        self.window.draw(
+            &circle,
+            quicksilver::graphics::Background::Col(rgba!(0.0, 0.0, 250.0, 0.25)),
+        );
 
         draw_cursor(input.raw_mouse_pos, self.window);
     }
