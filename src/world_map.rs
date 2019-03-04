@@ -2,7 +2,7 @@ use crate::level_generation::generate_level;
 use crate::physics::TileMap;
 use crate::player::PlayerControls;
 use crate::prelude::*;
-use crate::{Input, ScreenSize, UIState, TILE_SIZE};
+use crate::{Input, PlayerProgression, ScreenSize, UIState, TILE_SIZE};
 
 pub const RANGE1: f32 = 150.0;
 pub const RANGE2: f32 = 300.0;
@@ -36,6 +36,7 @@ impl<'a> System<'a> for WorldMapScreen {
         Read<'a, LazyUpdate>,
         Entities<'a>,
         Write<'a, CurrentDungeon>,
+        Read<'a, PlayerProgression>,
     );
 
     fn run(
@@ -51,12 +52,17 @@ impl<'a> System<'a> for WorldMapScreen {
             lazy_update,
             entities,
             mut current_dungeon,
+            progression,
         ): Self::SystemData,
     ) {
         let offset = screen_size.size / 2.0;
         let mouse_pos = input.raw_mouse_pos - offset;
         for (e, d) in (&entities, &dungeons).join() {
-            if input.fire && (d.position - mouse_pos).len2() < 10.0 * 10.0 {
+            if input.fire
+                && (d.position - mouse_pos).len2() < 10.0 * 10.0
+                && (d.position.len2() <= RANGE1 * RANGE1 || progression.range_extended)
+                && !d.completed
+            {
                 *ui_state = UIState::Playing;
                 let level = generate_level();
                 *tile_map = level.tile_map;

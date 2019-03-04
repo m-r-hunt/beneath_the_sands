@@ -103,7 +103,8 @@ impl<'a> System<'a> for ExitSystem {
                     current_dungeon.completed = true;
                     if current_dungeon.reward && !progression.range_extended {
                         progression.range_extended = true;
-                    } else {
+                        dbg!("Upgrade");
+                    } else if current_dungeon.reward {
                         *ui_state = UIState::Victory;
                     }
                 }
