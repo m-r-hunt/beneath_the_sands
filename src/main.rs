@@ -38,10 +38,9 @@ use prefabs::PrefabBuilder;
 mod level_generation;
 
 mod world_generation;
-use world_generation::Dungeon;
 
 mod world_map;
-use world_map::WorldMapScreen;
+use world_map::{CurrentDungeon, Dungeon, WorldMapScreen};
 
 mod all_components {
     pub use crate::gameplay::{Destructable, Exit};
@@ -69,11 +68,6 @@ pub struct SimTime {
 #[derive(Copy, Clone, Debug, Default)]
 pub struct Timer {
     expire_time: f32,
-}
-
-#[derive(Default)]
-pub struct CurrentDungeon {
-    pub entity: Option<Entity>,
 }
 
 #[derive(Default)]

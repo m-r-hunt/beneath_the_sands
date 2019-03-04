@@ -1,9 +1,9 @@
 use crate::physics::{hitbox_overlap, Bullet, CollidingWithWall, HitBox};
 use crate::player::PlayerControls;
 use crate::prelude::*;
-use crate::world_generation::Dungeon;
+use crate::world_map::{CurrentDungeon, Dungeon};
 use crate::UIState;
-use crate::{CurrentDungeon, Event, EventQueue, PlayerProgression};
+use crate::{Event, EventQueue, PlayerProgression};
 
 #[derive(Default)]
 pub struct Destructable;

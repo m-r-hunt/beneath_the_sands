@@ -1,17 +1,5 @@
 use crate::prelude::*;
-
-pub struct Dungeon {
-    pub position: Vector,
-    pub reward: bool,
-    pub completed: bool,
-}
-
-impl Component for Dungeon {
-    type Storage = HashMapStorage<Self>;
-}
-
-pub const RANGE1: f32 = 150.0;
-pub const RANGE2: f32 = 300.0;
+use crate::world_map::{Dungeon, RANGE1, RANGE2};
 
 const L1_DUNGEONS: usize = 5;
 const L2_DUNGEONS: usize = 10;

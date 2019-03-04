@@ -2,8 +2,25 @@ use crate::level_generation::generate_level;
 use crate::physics::TileMap;
 use crate::player::PlayerControls;
 use crate::prelude::*;
-use crate::world_generation::Dungeon;
-use crate::{CurrentDungeon, Input, ScreenSize, UIState, TILE_SIZE};
+use crate::{Input, ScreenSize, UIState, TILE_SIZE};
+
+pub const RANGE1: f32 = 150.0;
+pub const RANGE2: f32 = 300.0;
+
+pub struct Dungeon {
+    pub position: Vector,
+    pub reward: bool,
+    pub completed: bool,
+}
+
+impl Component for Dungeon {
+    type Storage = HashMapStorage<Self>;
+}
+
+#[derive(Default)]
+pub struct CurrentDungeon {
+    pub entity: Option<Entity>,
+}
 
 pub struct WorldMapScreen;
 

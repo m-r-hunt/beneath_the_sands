@@ -30,8 +30,7 @@ macro_rules! module_start {
     () => {
         r"
 use crate::all_components::*;
-use specs::Builder;
-use quicksilver::graphics::Color;
+use crate::prelude::*;
 
 pub trait PrefabBuilder: Builder + Sized {{
 "

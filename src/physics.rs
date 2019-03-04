@@ -1,7 +1,5 @@
-use super::{Event, EventQueue};
-use quicksilver::geom::{Circle, Rectangle, Shape, Vector};
-use quicksilver::graphics::Color;
-use specs::prelude::*;
+use crate::prelude::*;
+use crate::{Event, EventQueue};
 use std::collections::HashMap;
 
 pub const TILE_SIZE: f32 = 32.0;

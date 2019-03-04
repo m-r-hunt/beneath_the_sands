@@ -1,11 +1,8 @@
-use super::physics::Movement;
 use crate::physics::{TileMap, TILE_SIZE};
-use crate::world_generation::{Dungeon, RANGE1, RANGE2};
+use crate::prelude::*;
+use crate::world_map::{Dungeon, RANGE1, RANGE2};
 use crate::{Camera, Input, PlayerProgression};
-use quicksilver::geom::{Circle, Line, Rectangle, Vector};
-use quicksilver::graphics::Color;
 use quicksilver::lifecycle::Window;
-use specs::prelude::*;
 
 pub struct TileMapRender<'a> {
     pub window: &'a mut Window,

@@ -1,8 +1,5 @@
-use super::physics::Movement;
-use super::{Input, SimTime, Timer};
-use crate::prefabs::PrefabBuilder;
-use quicksilver::geom::Vector;
-use specs::prelude::*;
+use crate::prelude::*;
+use crate::{Input, SimTime, Timer};
 
 const PLAYER_SPEED: f32 = 5.0;
 
