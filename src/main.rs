@@ -1,10 +1,10 @@
+#![allow(clippy::type_complexity)] // Specs often leads to big SystemData but I think that's fine.
+
 extern crate specs;
 
-use quicksilver::geom::Vector;
-use quicksilver::graphics::{Color, Font, FontStyle};
+use quicksilver::graphics::{Font, FontStyle};
 use quicksilver::input::{ButtonState, MouseButton};
 use quicksilver::lifecycle::{run, Settings, State, Window};
-use specs::prelude::*;
 
 const SCREEN_WIDTH: f32 = 800.0;
 const SCREEN_HEIGHT: f32 = 600.0;
@@ -21,19 +21,16 @@ macro_rules! rgba {
 }
 
 mod physics;
-use physics::{
-    Bullet, CollidingWithWall, CollisionDetection, HitBox, Movement, MovementSystem, TileMap,
-    TILE_SIZE,
-};
+use physics::{CollisionDetection, MovementSystem, TileMap, TILE_SIZE};
 
 mod player;
-use player::{PlayerControlSystem, PlayerControls};
+use player::PlayerControlSystem;
 
 mod gameplay;
-use gameplay::{BulletSelfDestruct, CollisionHandler};
+use gameplay::{BulletSelfDestruct, CollisionHandler, ExitSystem};
 
 mod render;
-use render::{Render, RenderComponent, RenderCursor, TileMapRender, WorldMapRender};
+use render::{Render, RenderCursor, TileMapRender, WorldMapRender};
 
 mod prefabs;
 use prefabs::PrefabBuilder;
@@ -47,18 +44,22 @@ mod world_map;
 use world_map::WorldMapScreen;
 
 mod all_components {
-    pub use crate::physics::{Bullet, HitBox, Movement};
+    pub use crate::gameplay::{Destructable, Exit};
+    pub use crate::physics::{Bullet, CollidingWithWall, HitBox, Movement};
     pub use crate::player::PlayerControls;
     pub use crate::render::RenderComponent;
 }
+use all_components::*;
 
 mod prelude {
     pub use crate::physics::Movement;
+    pub use crate::prefabs::PrefabBuilder;
     pub use quicksilver::geom::*;
     pub use quicksilver::graphics::Color;
     pub use rand::Rng;
     pub use specs::*;
 }
+use prelude::*;
 
 #[derive(Copy, Clone, Debug, Default)]
 pub struct SimTime {
@@ -178,6 +179,8 @@ impl State for GameState {
         world.register::<Bullet>();
         world.register::<CollidingWithWall>();
         world.register::<Dungeon>();
+        world.register::<Exit>();
+        world.register::<Destructable>();
 
         let player = world
             .create_entity()
@@ -192,6 +195,17 @@ impl State for GameState {
             .with_target_prefab()
             .with(Movement {
                 position: Vector::new(SCREEN_WIDTH / 2.0, 100.0),
+                velocity: Vector::new(0.0, 0.0),
+            })
+            .build();
+        world
+            .create_entity()
+            .with_exit_prefab()
+            .with(Movement {
+                position: Vector::new(
+                    level.exit_position.0 as f32 * TILE_SIZE,
+                    level.exit_position.1 as f32 * TILE_SIZE,
+                ),
                 velocity: Vector::new(0.0, 0.0),
             })
             .build();
@@ -329,6 +343,7 @@ fn make_dispatcher<'a, 'b>() -> Dispatcher<'a, 'b> {
             &["collision_detection"],
         )
         .with(BulletSelfDestruct, "bullet_self_destruct", &["movement"])
+        .with(ExitSystem, "exit", &["movement"])
         .build()
 }
 

@@ -168,3 +168,14 @@ impl Default for Tile {
         }
     }
 }
+
+pub fn hitbox_overlap(
+    movement1: &Movement,
+    hitbox1: &HitBox,
+    movement2: &Movement,
+    hitbox2: &HitBox,
+) -> bool {
+    let c1 = Circle::new(movement1.position, hitbox1.radius);
+    let c2 = Circle::new(movement2.position, hitbox2.radius);
+    c1.overlaps(&c2)
+}

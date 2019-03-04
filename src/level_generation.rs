@@ -10,6 +10,7 @@ use rand::Rng;
 pub struct GeneratedLevel {
     pub tile_map: TileMap,
     pub start_position: (i32, i32),
+    pub exit_position: (i32, i32),
 }
 
 fn carve_room(position: (i32, i32), size: (i32, i32), tile_map: &mut TileMap) {
@@ -222,8 +223,10 @@ fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
             }
         }
     }
+    let exit_position = (end.0 * 20 + 5, end.1 * 20 + 5);
     Ok(GeneratedLevel {
         tile_map,
         start_position: (5, 5),
+        exit_position,
     })
 }

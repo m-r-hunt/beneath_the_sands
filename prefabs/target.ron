@@ -8,5 +8,6 @@ Prefab(
 	(name: "HitBox", properties: [
             (name: "radius", value: "20.0"),
         ]),
+	(name: "Destructable"),
     ],
 )
