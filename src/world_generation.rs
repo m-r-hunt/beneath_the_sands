@@ -1,3 +1,4 @@
+use crate::level_generation::LevelStyle;
 use crate::prelude::*;
 use crate::world_map::{Dungeon, RANGE1, RANGE2};
 
@@ -13,6 +14,11 @@ pub fn generate_dungeons(world: &mut World) {
                 .with_len(rng.gen_range(50.0, RANGE1)),
             reward: false,
             completed: false,
+            style: if rng.gen_range(0.0, 1.0) > 0.5 {
+                LevelStyle::Cyclic
+            } else {
+                LevelStyle::CellularAutomata
+            },
         });
     }
     out[rng.gen_range(0, L1_DUNGEONS)].reward = true;
@@ -22,6 +28,11 @@ pub fn generate_dungeons(world: &mut World) {
                 .with_len(rng.gen_range(RANGE1, RANGE2)),
             reward: false,
             completed: false,
+            style: if rng.gen_range(0.0, 1.0) > 0.5 {
+                LevelStyle::Cyclic
+            } else {
+                LevelStyle::CellularAutomata
+            },
         });
     }
     out[rng.gen_range(L1_DUNGEONS, L2_DUNGEONS)].reward = true;

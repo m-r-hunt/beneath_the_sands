@@ -11,6 +11,7 @@ pub struct Dungeon {
     pub position: Vector,
     pub reward: bool,
     pub completed: bool,
+    pub style: LevelStyle,
 }
 
 impl Component for Dungeon {
@@ -64,7 +65,7 @@ impl<'a> System<'a> for WorldMapScreen {
                 && !d.completed
             {
                 *ui_state = UIState::Playing;
-                let level = generate_level(LevelStyle::Cyclic);
+                let level = generate_level(d.style);
                 *tile_map = level.tile_map;
                 for (_, player_movement) in (&players, &mut movements).join() {
                     player_movement.position = Vector::from(level.start_position) * TILE_SIZE;

@@ -1,5 +1,6 @@
 use crate::physics::TileMap;
 
+#[derive(Copy, Clone, Debug)]
 pub enum LevelStyle {
     Cyclic,
     CellularAutomata,
