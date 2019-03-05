@@ -1,4 +1,4 @@
-use crate::level_generation::generate_level;
+use crate::level_generation::{generate_level, LevelStyle};
 use crate::physics::TileMap;
 use crate::player::PlayerControls;
 use crate::prelude::*;
@@ -64,7 +64,7 @@ impl<'a> System<'a> for WorldMapScreen {
                 && !d.completed
             {
                 *ui_state = UIState::Playing;
-                let level = generate_level();
+                let level = generate_level(LevelStyle::Cyclic);
                 *tile_map = level.tile_map;
                 for (_, player_movement) in (&players, &mut movements).join() {
                     player_movement.position = Vector::from(level.start_position) * TILE_SIZE;

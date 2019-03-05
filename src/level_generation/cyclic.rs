@@ -1,5 +1,6 @@
+use super::{GeneratedLevel, StringErr};
 use crate::physics::{Tile, TileMap};
-use rand::Rng;
+use crate::prelude::*;
 use std::collections::HashSet;
 
 // # S-#-#-#
@@ -7,12 +8,6 @@ use std::collections::HashSet;
 // # #-# #-#
 //     | |
 // # # E-# #
-
-pub struct GeneratedLevel {
-    pub tile_map: TileMap,
-    pub start_position: (i32, i32),
-    pub exit_position: (i32, i32),
-}
 
 fn carve_room(position: (i32, i32), size: (i32, i32), tile_map: &mut TileMap) {
     for x in -1..=size.0 {
@@ -43,21 +38,7 @@ fn manhatten_distance(from: (i32, i32), to: (i32, i32)) -> i32 {
     (from.0 - to.0).abs() + (from.1 - to.1).abs()
 }
 
-pub fn generate_level() -> GeneratedLevel {
-    loop {
-        match try_generate_level() {
-            Ok(l) => return l,
-            Err(e) => {
-                dbg!(e);
-            }
-        }
-    }
-}
-
-#[derive(Debug)]
-struct StringErr(String);
-
-fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
+pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
     let mut rng = rand::thread_rng();
     let mut tile_map: TileMap = Default::default();
     // Assume start position is always 0, 0

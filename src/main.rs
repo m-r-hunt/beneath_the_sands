@@ -36,6 +36,7 @@ mod prefabs;
 use prefabs::PrefabBuilder;
 
 mod level_generation;
+use level_generation::LevelStyle;
 
 mod world_generation;
 
@@ -172,7 +173,7 @@ pub struct ScreenSize {
 impl State for GameState {
     fn new() -> quicksilver::Result<Self> {
         let title_image = Asset::new(Image::load("title.png"));
-        let level = level_generation::generate_level();
+        let level = level_generation::generate_level(LevelStyle::Cyclic);
 
         let font =
             Font::from_slice(include_bytes!("fonts/fonts/OpenSans/OpenSans-Regular.ttf")).unwrap();
