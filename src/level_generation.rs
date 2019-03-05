@@ -94,7 +94,7 @@ fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
     let mut side_path = vec![choice_point];
     {
         let mut current_pos = choice_point;
-        let side_path_len = rng.gen_range(1, 3);
+        let side_path_len = rng.gen_range(2, 3);
         for _ in 0..side_path_len {
             let mut choices = Vec::new();
             for choice in [(-1, 0), (1, 0), (0, -1), (0, 1)].iter() {
@@ -117,6 +117,43 @@ fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
             current_pos = (current_pos.0 + choice.0, current_pos.1 + choice.1);
             side_path.push(current_pos);
             visited.insert(current_pos);
+        }
+
+        loop {
+            if let Some(c) = path
+                .iter()
+                .find(|c| manhatten_distance(current_pos, **c) == 1)
+            {
+                side_path.push(*c);
+                break;
+            }
+            let mut choices = Vec::new();
+            for choice in [(-1, 0), (1, 0), (0, -1), (0, 1)].iter() {
+                if visited.contains(&(current_pos.0 + choice.0, current_pos.1 + choice.1)) {
+                    continue;
+                }
+
+                choices.push(choice);
+
+                if manhatten_distance((current_pos.0 + choice.0, current_pos.1 + choice.1), start)
+                    < manhatten_distance(current_pos, start)
+                {
+                    choices.push(choice);
+                }
+            }
+
+            if choices.is_empty() {
+                return Err(StringErr("Got stuck with no choice loop 2".to_string()));
+            }
+
+            let index = rng.gen_range(0, choices.len());
+            let choice = choices[index];
+            current_pos = (current_pos.0 + choice.0, current_pos.1 + choice.1);
+            side_path.push(current_pos);
+            visited.insert(current_pos);
+        }
+        if side_path.len() > 8 {
+            return Err(StringErr("Side path excessively long".to_string()));
         }
     }
 
