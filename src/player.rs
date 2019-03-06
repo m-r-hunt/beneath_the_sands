@@ -2,7 +2,7 @@ use crate::physics::PhysicsComponent;
 use crate::prelude::*;
 use crate::{Input, SimTime, Timer};
 
-const PLAYER_SPEED: f32 = 5.0;
+const PLAYER_ACCELERATION: f32 = 10.0;
 
 #[derive(Default)]
 pub struct PlayerControls {
@@ -34,28 +34,26 @@ impl<'a> System<'a> for PlayerControlSystem {
         for (player_controls, transform, physics) in
             (&mut player_controls, &mut transforms, &mut physics).join()
         {
-            physics.velocity = Vector::new(0.0, 0.0);
+            physics.acceleration = Vector::new(0.0, 0.0);
             if input.left {
-                physics.velocity.x = -1.0;
+                physics.acceleration.x = -1.0;
             }
             if input.right {
-                physics.velocity.x = 1.0;
+                physics.acceleration.x = 1.0;
             }
             if input.up {
-                physics.velocity.y = -1.0;
+                physics.acceleration.y = -1.0;
             }
             if input.down {
-                physics.velocity.y = 1.0;
+                physics.acceleration.y = 1.0;
             }
-            let vel_len = (physics.velocity.x * physics.velocity.x
-                + physics.velocity.x * physics.velocity.x)
-                .sqrt();
-            if vel_len > std::f32::EPSILON {
-                physics.velocity.x /= vel_len;
-                physics.velocity.y /= vel_len;
+            if physics.acceleration.len2() >= std::f32::EPSILON {
+                physics.acceleration = physics.acceleration.with_len(PLAYER_ACCELERATION);
+            } else if physics.velocity.len2() >= std::f32::EPSILON {
+                physics.velocity = physics
+                    .velocity
+                    .with_len((physics.velocity.len() - 5.0).max(0.0));
             }
-            physics.velocity.x *= PLAYER_SPEED;
-            physics.velocity.y *= PLAYER_SPEED;
             if input.fire && player_controls.fire_cooldown.expired(*sim_time) {
                 let bullet_speed = 10.0;
                 let velocity = (input.mouse_pos - transform.position).with_len(bullet_speed);
