@@ -67,7 +67,7 @@ pub struct ExitSystem;
 // This has a lot of game logic stuffed into basically a collision check with the stairs...
 impl<'a> System<'a> for ExitSystem {
     type SystemData = (
-        ReadStorage<'a, Movement>,
+        ReadStorage<'a, Transform>,
         ReadStorage<'a, Exit>,
         ReadStorage<'a, PlayerControls>,
         Write<'a, UIState>,
@@ -80,7 +80,7 @@ impl<'a> System<'a> for ExitSystem {
     fn run(
         &mut self,
         (
-            movements,
+            transforms,
             exits,
             players,
             mut ui_state,
@@ -90,9 +90,9 @@ impl<'a> System<'a> for ExitSystem {
             mut progression,
         ): Self::SystemData,
     ) {
-        for (exit_movement, exit_hitbox, _) in (&movements, &hitboxes, &exits).join() {
-            for (player_movement, player_hitbox, _) in (&movements, &hitboxes, &players).join() {
-                if hitbox_overlap(player_movement, player_hitbox, exit_movement, exit_hitbox) {
+        for (exit_transform, exit_hitbox, _) in (&transforms, &hitboxes, &exits).join() {
+            for (player_transform, player_hitbox, _) in (&transforms, &hitboxes, &players).join() {
+                if hitbox_overlap(player_transform, player_hitbox, exit_transform, exit_hitbox) {
                     *ui_state = UIState::WorldMap;
                     let current_dungeon = current_dungeon
                         .entity

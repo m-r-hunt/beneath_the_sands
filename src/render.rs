@@ -12,7 +12,7 @@ impl<'a: 'b, 'b> System<'b> for TileMapRender<'a> {
     type SystemData = (
         Read<'b, TileMap>,
         ReadExpect<'b, Camera>,
-        ReadStorage<'b, Movement>,
+        ReadStorage<'b, Transform>,
     );
 
     fn run(&mut self, (tilemap, camera, movements): Self::SystemData) {
@@ -61,7 +61,7 @@ pub struct Render<'a> {
 impl<'a: 'b, 'b> System<'b> for Render<'a> {
     type SystemData = (
         ReadExpect<'b, Camera>,
-        ReadStorage<'b, Movement>,
+        ReadStorage<'b, Transform>,
         ReadStorage<'b, RenderComponent>,
     );
 
@@ -122,7 +122,7 @@ impl<'a: 'b, 'b> System<'b> for RenderCursor<'a> {
     type SystemData = (
         ReadExpect<'b, Camera>,
         Read<'b, Input>,
-        ReadStorage<'b, Movement>,
+        ReadStorage<'b, Transform>,
     );
 
     fn run(&mut self, (camera, input, movements): Self::SystemData) {

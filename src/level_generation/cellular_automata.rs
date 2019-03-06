@@ -91,7 +91,7 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
     // TODO: Pick random quadrants for the start/exit.
     let mut start_position = (-1, -1);
     'outer: for x in 0..LEVEL_SIZE {
-        for y in 0..x {
+        for y in 0..=x {
             if level[&(x, y)] == 0 {
                 start_position = (x, y);
                 break 'outer;

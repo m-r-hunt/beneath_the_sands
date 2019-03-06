@@ -1,3 +1,4 @@
+use crate::physics::PhysicsComponent;
 use crate::prelude::*;
 use crate::{Input, SimTime, Timer};
 
@@ -18,7 +19,8 @@ impl<'a> System<'a> for PlayerControlSystem {
     #[allow(clippy::type_complexity)]
     type SystemData = (
         WriteStorage<'a, PlayerControls>,
-        WriteStorage<'a, Movement>,
+        WriteStorage<'a, Transform>,
+        WriteStorage<'a, PhysicsComponent>,
         Read<'a, Input>,
         Read<'a, SimTime>,
         Read<'a, LazyUpdate>,
@@ -27,38 +29,44 @@ impl<'a> System<'a> for PlayerControlSystem {
 
     fn run(
         &mut self,
-        (mut player_controls, mut movements, input, sim_time, lazy_update, entities): Self::SystemData,
+        (mut player_controls, mut transforms, mut physics, input, sim_time, lazy_update, entities): Self::SystemData,
     ) {
-        for (player_controls, movement) in (&mut player_controls, &mut movements).join() {
-            movement.velocity = Vector::new(0.0, 0.0);
+        for (player_controls, transform, physics) in
+            (&mut player_controls, &mut transforms, &mut physics).join()
+        {
+            physics.velocity = Vector::new(0.0, 0.0);
             if input.left {
-                movement.velocity.x = -1.0;
+                physics.velocity.x = -1.0;
             }
             if input.right {
-                movement.velocity.x = 1.0;
+                physics.velocity.x = 1.0;
             }
             if input.up {
-                movement.velocity.y = -1.0;
+                physics.velocity.y = -1.0;
             }
             if input.down {
-                movement.velocity.y = 1.0;
+                physics.velocity.y = 1.0;
             }
-            let vel_len = (movement.velocity.x * movement.velocity.x
-                + movement.velocity.x * movement.velocity.x)
+            let vel_len = (physics.velocity.x * physics.velocity.x
+                + physics.velocity.x * physics.velocity.x)
                 .sqrt();
             if vel_len > std::f32::EPSILON {
-                movement.velocity.x /= vel_len;
-                movement.velocity.y /= vel_len;
+                physics.velocity.x /= vel_len;
+                physics.velocity.y /= vel_len;
             }
-            movement.velocity.x *= PLAYER_SPEED;
-            movement.velocity.y *= PLAYER_SPEED;
+            physics.velocity.x *= PLAYER_SPEED;
+            physics.velocity.y *= PLAYER_SPEED;
             if input.fire && player_controls.fire_cooldown.expired(*sim_time) {
-                let velocity = (input.mouse_pos - movement.position).with_len(10.0);
-                let position = movement.position + velocity.with_len(30.0);
+                let velocity = (input.mouse_pos - transform.position).with_len(10.0);
+                let position = transform.position + velocity.with_len(30.0);
                 lazy_update
                     .create_entity(&entities)
                     .with_bullet_prefab()
-                    .with(Movement { position, velocity })
+                    .with(Transform { position })
+                    .with(PhysicsComponent {
+                        velocity,
+                        ..Default::default()
+                    })
                     .build();
                 player_controls.fire_cooldown.set(*sim_time, 1.0 / 10.0);
             }

@@ -33,7 +33,7 @@ impl<'a> System<'a> for WorldMapScreen {
         Read<'a, Input>,
         Write<'a, TileMap>,
         ReadStorage<'a, PlayerControls>,
-        WriteStorage<'a, Movement>,
+        WriteStorage<'a, Transform>,
         Read<'a, LazyUpdate>,
         Entities<'a>,
         Write<'a, CurrentDungeon>,
@@ -68,17 +68,17 @@ impl<'a> System<'a> for WorldMapScreen {
                 let level = generate_level(d.style);
                 *tile_map = level.tile_map;
                 for (_, player_movement) in (&players, &mut movements).join() {
-                    player_movement.position = Vector::from(level.start_position) * TILE_SIZE;
+                    player_movement.position = Vector::from(level.start_position) * TILE_SIZE
+                        + Vector::new(TILE_SIZE / 2.0, TILE_SIZE / 2.0);
                 }
                 lazy_update
                     .create_entity(&entities)
                     .with_exit_prefab()
-                    .with(Movement {
+                    .with(Transform {
                         position: Vector::new(
                             level.exit_position.0 as f32 * TILE_SIZE,
                             level.exit_position.1 as f32 * TILE_SIZE,
                         ),
-                        velocity: Vector::new(0.0, 0.0),
                     })
                     .build();
                 current_dungeon.entity = Some(e);

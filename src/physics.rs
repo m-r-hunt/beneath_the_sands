@@ -5,12 +5,22 @@ use std::collections::HashMap;
 pub const TILE_SIZE: f32 = 32.0;
 
 #[derive(Debug, Default)]
-pub struct Movement {
+pub struct Transform {
     pub position: Vector,
-    pub velocity: Vector,
 }
 
-impl Component for Movement {
+#[derive(Debug, Default)]
+pub struct PhysicsComponent {
+    pub velocity: Vector,
+    pub acceleration: Vector,
+    pub max_speed: f32,
+}
+
+impl Component for PhysicsComponent {
+    type Storage = DenseVecStorage<Self>;
+}
+
+impl Component for Transform {
     type Storage = VecStorage<Self>;
 }
 
@@ -39,12 +49,13 @@ impl Component for CollidingWithWall {
     type Storage = HashMapStorage<Self>;
 }
 
-pub struct MovementSystem;
+pub struct PhysicsSystem;
 
-impl<'a> System<'a> for MovementSystem {
+impl<'a> System<'a> for PhysicsSystem {
     type SystemData = (
         Entities<'a>,
-        WriteStorage<'a, Movement>,
+        WriteStorage<'a, Transform>,
+        WriteStorage<'a, PhysicsComponent>,
         ReadStorage<'a, HitBox>,
         Read<'a, TileMap>,
         WriteStorage<'a, CollidingWithWall>,
@@ -52,21 +63,23 @@ impl<'a> System<'a> for MovementSystem {
 
     fn run(
         &mut self,
-        (entities, mut movements, hitboxes, tilemap, mut colliding_with_walls): Self::SystemData,
+        (entities, mut transforms, mut physics, hitboxes, tilemap, mut colliding_with_walls): Self::SystemData,
     ) {
-        for (movement, hitbox) in (&mut movements, &hitboxes).join() {
-            let new_position = movement.position + movement.velocity;
+        for (transform, physics, hitbox) in (&mut transforms, &mut physics, &hitboxes).join() {
+            let new_position = transform.position + physics.velocity;
             let colliding = check_collision(new_position, hitbox, &tilemap);
             if !colliding {
-                movement.position = new_position;
+                transform.position = new_position;
             } else {
-                movement.velocity = Vector::new(0.0, 0.0);
+                physics.velocity = Vector::new(0.0, 0.0);
             }
         }
 
-        for (entity, movement, _) in (&entities, &mut movements, !&hitboxes).join() {
-            let new_position = movement.position + movement.velocity;
-            movement.position = new_position;
+        for (entity, transform, physics, _) in
+            (&entities, &mut transforms, &physics, !&hitboxes).join()
+        {
+            let new_position = transform.position + physics.velocity;
+            transform.position = new_position;
 
             let colliding = check_point_collision(new_position, &tilemap);
             if colliding {
@@ -126,18 +139,19 @@ pub struct CollisionDetection;
 
 impl<'a> System<'a> for CollisionDetection {
     type SystemData = (
-        ReadStorage<'a, Movement>,
+        ReadStorage<'a, Transform>,
         ReadStorage<'a, HitBox>,
         ReadStorage<'a, Bullet>,
         Entities<'a>,
         Write<'a, EventQueue>,
     );
 
-    fn run(&mut self, (movements, hitbox, bullet, entities, mut event_queue): Self::SystemData) {
-        for (movement, hitbox, entity) in (&movements, &hitbox, &entities).join() {
-            for (bullet_movement, bullet_entity, bullet) in (&movements, &entities, &bullet).join()
+    fn run(&mut self, (transforms, hitbox, bullet, entities, mut event_queue): Self::SystemData) {
+        for (transform, hitbox, entity) in (&transforms, &hitbox, &entities).join() {
+            for (bullet_transform, bullet_entity, bullet) in
+                (&transforms, &entities, &bullet).join()
             {
-                if (bullet_movement.position - movement.position).len()
+                if (bullet_transform.position - transform.position).len()
                     < hitbox.radius + bullet.radius
                 {
                     event_queue.enqueue(Event::Collision(entity, bullet_entity));
@@ -168,12 +182,12 @@ impl Default for Tile {
 }
 
 pub fn hitbox_overlap(
-    movement1: &Movement,
+    transform1: &Transform,
     hitbox1: &HitBox,
-    movement2: &Movement,
+    transform2: &Transform,
     hitbox2: &HitBox,
 ) -> bool {
-    let c1 = Circle::new(movement1.position, hitbox1.radius);
-    let c2 = Circle::new(movement2.position, hitbox2.radius);
+    let c1 = Circle::new(transform1.position, hitbox1.radius);
+    let c2 = Circle::new(transform2.position, hitbox2.radius);
     c1.overlaps(&c2)
 }

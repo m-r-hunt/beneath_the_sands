@@ -21,7 +21,7 @@ macro_rules! rgba {
 }
 
 mod physics;
-use physics::{CollisionDetection, MovementSystem, TileMap, TILE_SIZE};
+use physics::{CollisionDetection, PhysicsSystem, TileMap, TILE_SIZE};
 
 mod player;
 use player::PlayerControlSystem;
@@ -45,14 +45,14 @@ use world_map::{CurrentDungeon, Dungeon, WorldMapScreen};
 
 mod all_components {
     pub use crate::gameplay::{Destructable, Exit};
-    pub use crate::physics::{Bullet, CollidingWithWall, HitBox, Movement};
+    pub use crate::physics::{Bullet, CollidingWithWall, HitBox, PhysicsComponent, Transform};
     pub use crate::player::PlayerControls;
     pub use crate::render::RenderComponent;
 }
 use all_components::*;
 
 mod prelude {
-    pub use crate::physics::Movement;
+    pub use crate::physics::Transform;
     pub use crate::prefabs::PrefabBuilder;
     pub use quicksilver::geom::*;
     pub use quicksilver::graphics::Color;
@@ -156,7 +156,7 @@ pub struct Camera {
 }
 
 impl Camera {
-    fn get_position<'a>(&self, movements: &ReadStorage<'a, Movement>, window: &Window) -> Vector {
+    fn get_position<'a>(&self, movements: &ReadStorage<'a, Transform>, window: &Window) -> Vector {
         movements
             .get(self.follow)
             .expect("TODO: Remember where the camera was last and don't crash")
@@ -180,7 +180,8 @@ impl State for GameState {
 
         let mut world = World::new();
 
-        world.register::<Movement>();
+        world.register::<Transform>();
+        world.register::<PhysicsComponent>();
         world.register::<PlayerControls>();
         world.register::<RenderComponent>();
         world.register::<HitBox>();
@@ -193,28 +194,26 @@ impl State for GameState {
         let player = world
             .create_entity()
             .with_player_prefab()
-            .with(Movement {
-                position: Vector::from(level.start_position) * TILE_SIZE,
-                velocity: Vector::new(0.0, 0.0),
+            .with(Transform {
+                position: Vector::from(level.start_position) * TILE_SIZE
+                    + Vector::new(TILE_SIZE / 2.0, TILE_SIZE / 2.0),
             })
             .build();
         world
             .create_entity()
             .with_target_prefab()
-            .with(Movement {
+            .with(Transform {
                 position: Vector::new(SCREEN_WIDTH / 2.0, 100.0),
-                velocity: Vector::new(0.0, 0.0),
             })
             .build();
         world
             .create_entity()
             .with_exit_prefab()
-            .with(Movement {
+            .with(Transform {
                 position: Vector::new(
                     level.exit_position.0 as f32 * TILE_SIZE,
                     level.exit_position.1 as f32 * TILE_SIZE,
                 ),
-                velocity: Vector::new(0.0, 0.0),
             })
             .build();
         world.add_resource::<Input>(Default::default());
@@ -281,7 +280,7 @@ impl State for GameState {
                     } else {
                         self.world
                             .write_storage::<HitBox>()
-                            .insert(player, HitBox { radius: 20.0 })
+                            .insert(player, HitBox { radius: 15.0 })
                             .expect("Player should be alive"); // TODO Don't hardcode radius
                     }
                 }
@@ -365,15 +364,15 @@ fn draw_text_centered(text: &str, position: Vector, font: &Font, window: &mut Wi
 fn make_dispatcher<'a, 'b>() -> Dispatcher<'a, 'b> {
     DispatcherBuilder::new()
         .with(PlayerControlSystem, "player_control", &[])
-        .with(MovementSystem, "movement", &["player_control"])
-        .with(CollisionDetection, "collision_detection", &["movement"])
+        .with(PhysicsSystem, "physics", &["player_control"])
+        .with(CollisionDetection, "collision_detection", &["physics"])
         .with(
             CollisionHandler,
             "collision_handler",
             &["collision_detection"],
         )
-        .with(BulletSelfDestruct, "bullet_self_destruct", &["movement"])
-        .with(ExitSystem, "exit", &["movement"])
+        .with(BulletSelfDestruct, "bullet_self_destruct", &["physics"])
+        .with(ExitSystem, "exit", &["physics"])
         .build()
 }
 
