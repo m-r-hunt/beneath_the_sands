@@ -9,5 +9,6 @@ Prefab(
             (name: "radius", value: "20.0"),
         ]),
 	(name: "Destructable"),
+	(name: "LevelObject"),
     ],
 )

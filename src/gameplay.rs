@@ -12,6 +12,13 @@ impl Component for Destructable {
     type Storage = HashMapStorage<Self>;
 }
 
+#[derive(Default)]
+pub struct LevelObject;
+
+impl Component for LevelObject {
+    type Storage = VecStorage<Self>;
+}
+
 pub struct CollisionHandler;
 
 impl<'a> System<'a> for CollisionHandler {
@@ -75,6 +82,8 @@ impl<'a> System<'a> for ExitSystem {
         Write<'a, CurrentDungeon>,
         WriteStorage<'a, Dungeon>,
         Write<'a, PlayerProgression>,
+        ReadStorage<'a, LevelObject>,
+        Entities<'a>,
     );
 
     fn run(
@@ -88,6 +97,8 @@ impl<'a> System<'a> for ExitSystem {
             current_dungeon,
             mut dungeons,
             mut progression,
+            level_objects,
+            entities,
         ): Self::SystemData,
     ) {
         for (exit_transform, exit_hitbox, _) in (&transforms, &hitboxes, &exits).join() {
@@ -106,6 +117,10 @@ impl<'a> System<'a> for ExitSystem {
                         dbg!("Upgrade");
                     } else if current_dungeon.reward {
                         *ui_state = UIState::Victory;
+                    }
+
+                    for (_, ent) in (&level_objects, &entities).join() {
+                        entities.delete(ent).unwrap();
                     }
                 }
             }

@@ -7,5 +7,6 @@ Prefab(
         ]),
 	(name: "PhysicsComponent"),
 	(name: "Bullet", properties: [(name: "radius", value: "5.0")]),
+	(name: "LevelObject"),
     ],
 )

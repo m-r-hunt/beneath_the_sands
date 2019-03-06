@@ -68,7 +68,7 @@ impl<'a> System<'a> for PlayerControlSystem {
                         ..Default::default()
                     })
                     .build();
-                player_controls.fire_cooldown.set(*sim_time, 1.0 / 10.0);
+                player_controls.fire_cooldown.set(*sim_time, 0.7);
             }
         }
     }

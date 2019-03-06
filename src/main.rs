@@ -44,7 +44,7 @@ mod world_map;
 use world_map::{CurrentDungeon, Dungeon, WorldMapScreen};
 
 mod all_components {
-    pub use crate::gameplay::{Destructable, Exit};
+    pub use crate::gameplay::{Destructable, Exit, LevelObject};
     pub use crate::physics::{Bullet, CollidingWithWall, HitBox, PhysicsComponent, Transform};
     pub use crate::player::PlayerControls;
     pub use crate::render::RenderComponent;
@@ -190,6 +190,7 @@ impl State for GameState {
         world.register::<Dungeon>();
         world.register::<Exit>();
         world.register::<Destructable>();
+        world.register::<LevelObject>();
 
         let player = world
             .create_entity()
@@ -204,16 +205,6 @@ impl State for GameState {
             .with_target_prefab()
             .with(Transform {
                 position: Vector::new(SCREEN_WIDTH / 2.0, 100.0),
-            })
-            .build();
-        world
-            .create_entity()
-            .with_exit_prefab()
-            .with(Transform {
-                position: Vector::new(
-                    level.exit_position.0 as f32 * TILE_SIZE,
-                    level.exit_position.1 as f32 * TILE_SIZE,
-                ),
             })
             .build();
         world.add_resource::<Input>(Default::default());

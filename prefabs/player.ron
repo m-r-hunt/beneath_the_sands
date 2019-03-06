@@ -7,6 +7,6 @@ Prefab(
         ]),
 	(name: "HitBox", properties: [(name: "radius", value: "15.0")]),
 	(name: "PlayerControls"),
-	(name: "PhysicsComponent", properties: [(name: "max_speed", value: "10.0")]),
+	(name: "PhysicsComponent", properties: [(name: "max_speed", value: "6.0")]),
     ],
 )
