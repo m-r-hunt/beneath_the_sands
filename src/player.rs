@@ -57,7 +57,8 @@ impl<'a> System<'a> for PlayerControlSystem {
             physics.velocity.x *= PLAYER_SPEED;
             physics.velocity.y *= PLAYER_SPEED;
             if input.fire && player_controls.fire_cooldown.expired(*sim_time) {
-                let velocity = (input.mouse_pos - transform.position).with_len(10.0);
+                let bullet_speed = 10.0;
+                let velocity = (input.mouse_pos - transform.position).with_len(bullet_speed);
                 let position = transform.position + velocity.with_len(30.0);
                 lazy_update
                     .create_entity(&entities)
@@ -65,6 +66,7 @@ impl<'a> System<'a> for PlayerControlSystem {
                     .with(Transform { position })
                     .with(PhysicsComponent {
                         velocity,
+                        max_speed: bullet_speed,
                         ..Default::default()
                     })
                     .build();

@@ -65,6 +65,13 @@ impl<'a> System<'a> for PhysicsSystem {
         &mut self,
         (entities, mut transforms, mut physics, hitboxes, tilemap, mut colliding_with_walls): Self::SystemData,
     ) {
+        for physics in (&mut physics).join() {
+            physics.velocity += physics.acceleration;
+            if physics.velocity.len2() >= physics.max_speed * physics.max_speed {
+                physics.velocity = physics.velocity.with_len(physics.max_speed);
+            }
+        }
+
         for (transform, physics, hitbox) in (&mut transforms, &mut physics, &hitboxes).join() {
             let new_position = transform.position + physics.velocity;
             let colliding = check_collision(new_position, hitbox, &tilemap);
