@@ -2,6 +2,16 @@ use crate::prelude::*;
 use crate::{Event, EventQueue};
 use std::collections::HashMap;
 
+fn sign(a: i32) -> i32 {
+    if a > 0 {
+        1
+    } else if a < 0 {
+        -1
+    } else {
+        0
+    }
+}
+
 pub const TILE_SIZE: f32 = 32.0;
 
 #[derive(Debug, Default)]
@@ -73,13 +83,59 @@ impl<'a> System<'a> for PhysicsSystem {
         }
 
         for (transform, physics, hitbox) in (&mut transforms, &mut physics, &hitboxes).join() {
+            let round_position = (transform.position.x.floor(), transform.position.y.floor());
+            assert!(!check_collision(
+                Vector::from(round_position),
+                hitbox,
+                &tilemap
+            ));
             let new_position = transform.position + physics.velocity;
-            let colliding = check_collision(new_position, hitbox, &tilemap);
-            if !colliding {
-                transform.position = new_position;
-            } else {
-                physics.velocity = Vector::new(0.0, 0.0);
+            let old_x = transform.position.x.floor() as i32;
+            let new_x = new_position.x.floor() as i32;
+            let dx = sign(new_x - old_x);
+            let steps = (new_x - old_x).abs();
+            let mut hit = false;
+            for ix in 0..steps {
+                let x = old_x + (1 + ix) * dx;
+                let colliding =
+                    check_collision(Vector::new(x as f32, round_position.1), hitbox, &tilemap);
+                if !colliding {
+                    transform.position.x = x as f32;
+                } else {
+                    physics.velocity.x = 0.0;
+                    hit = true;
+                    break;
+                }
             }
+            if !hit {
+                transform.position.x = new_position.x;
+            }
+            let round_position = (transform.position.x.floor(), transform.position.y.floor());
+            let old_y = transform.position.y.floor() as i32;
+            let new_y = new_position.y.floor() as i32;
+            let dy = sign(new_y - old_y);
+            let steps = (new_y - old_y).abs();
+            let mut hit = false;
+            for iy in 0..steps {
+                let y = old_y + (1 + iy) * dy;
+                let colliding =
+                    check_collision(Vector::new(round_position.0, y as f32), hitbox, &tilemap);
+                if !colliding {
+                    transform.position.y = y as f32;
+                } else {
+                    physics.velocity.y = 0.0;
+                    hit = true;
+                    break;
+                }
+            }
+            if !hit {
+                transform.position.y = new_position.y;
+            }
+            assert!(!check_collision(
+                Vector::new(transform.position.x.floor(), transform.position.y.floor()),
+                hitbox,
+                &tilemap
+            ));
         }
 
         for (entity, transform, physics, _) in
