@@ -167,7 +167,7 @@ fn check_point_collision(position: Vector, tilemap: &TileMap) -> bool {
         .collision
 }
 
-fn check_collision(position: Vector, hitbox: &HitBox, tilemap: &TileMap) -> bool {
+pub fn check_collision(position: Vector, hitbox: &HitBox, tilemap: &TileMap) -> bool {
     let min_x = position.x - hitbox.radius;
     let max_x = position.x + hitbox.radius;
     let min_y = position.y - hitbox.radius;

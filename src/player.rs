@@ -1,12 +1,15 @@
-use crate::physics::PhysicsComponent;
+use crate::physics::{check_collision, HitBox, PhysicsComponent, TileMap};
 use crate::prelude::*;
 use crate::{Input, SimTime, Timer};
 
 const PLAYER_ACCELERATION: f32 = 10.0;
+const DODGE_DISTANCE: i32 = 45;
+const DODGE_COOLDOWN: f32 = 2.0;
 
 #[derive(Default)]
 pub struct PlayerControls {
     pub fire_cooldown: Timer,
+    pub dodge_cooldown: Timer,
 }
 
 impl Component for PlayerControls {
@@ -21,31 +24,54 @@ impl<'a> System<'a> for PlayerControlSystem {
         WriteStorage<'a, PlayerControls>,
         WriteStorage<'a, Transform>,
         WriteStorage<'a, PhysicsComponent>,
+        ReadStorage<'a, HitBox>,
         Read<'a, Input>,
         Read<'a, SimTime>,
         Read<'a, LazyUpdate>,
+        Read<'a, TileMap>,
         Entities<'a>,
     );
 
     fn run(
         &mut self,
-        (mut player_controls, mut transforms, mut physics, input, sim_time, lazy_update, entities): Self::SystemData,
+        (
+            mut player_controls,
+            mut transforms,
+            mut physics,
+            hitboxes,
+            input,
+            sim_time,
+            lazy_update,
+            tile_map,
+            entities,
+        ): Self::SystemData,
     ) {
-        for (player_controls, transform, physics) in
-            (&mut player_controls, &mut transforms, &mut physics).join()
+        for (player_controls, transform, physics, player_ent) in (
+            &mut player_controls,
+            &mut transforms,
+            &mut physics,
+            &entities,
+        )
+            .join()
         {
             physics.acceleration = Vector::new(0.0, 0.0);
+            let mut dx = 0;
+            let mut dy = 0;
             if input.left {
                 physics.acceleration.x = -1.0;
+                dx = -1;
             }
             if input.right {
                 physics.acceleration.x = 1.0;
+                dx = 1;
             }
             if input.up {
                 physics.acceleration.y = -1.0;
+                dy = -1;
             }
             if input.down {
                 physics.acceleration.y = 1.0;
+                dy = 1;
             }
             if physics.acceleration.len2() >= std::f32::EPSILON {
                 physics.acceleration = physics.acceleration.with_len(PLAYER_ACCELERATION);
@@ -69,6 +95,35 @@ impl<'a> System<'a> for PlayerControlSystem {
                     })
                     .build();
                 player_controls.fire_cooldown.set(*sim_time, 0.7);
+            }
+            if input.dodge
+                && player_controls.dodge_cooldown.expired(*sim_time)
+                && (dx != 0 || dy != 0)
+                && hitboxes.get(player_ent).is_some()
+            {
+                player_controls
+                    .dodge_cooldown
+                    .set(*sim_time, DODGE_COOLDOWN);
+                let hitbox = hitboxes.get(player_ent).unwrap();
+                let mut the_position = (
+                    transform.position.x.floor() as i32,
+                    transform.position.y.floor() as i32,
+                );
+                physics.velocity = Vector::new(0.0, 0.0);
+                for _i in 0..DODGE_DISTANCE {
+                    let new_position = (the_position.0 + dx, the_position.1 + dy);
+                    let colliding = check_collision(
+                        Vector::new(new_position.0 as f32, new_position.1 as f32),
+                        hitbox,
+                        &tile_map,
+                    );
+                    if !colliding {
+                        the_position = new_position
+                    } else {
+                        break;
+                    }
+                }
+                transform.position = Vector::new(the_position.0 as f32, the_position.1 as f32);
             }
         }
     }

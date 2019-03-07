@@ -3,7 +3,7 @@
 extern crate specs;
 
 use quicksilver::graphics::{Font, FontStyle, Image};
-use quicksilver::input::{ButtonState, MouseButton};
+use quicksilver::input::{ButtonState, Key, MouseButton};
 use quicksilver::lifecycle::{run, Asset, Settings, State, Window};
 
 const SCREEN_WIDTH: f32 = 800.0;
@@ -100,6 +100,7 @@ pub struct Input {
     up: bool,
     down: bool,
     fire: bool,
+    dodge: bool,
     raw_mouse_pos: Vector,
     mouse_pos: Vector,
 }
@@ -228,11 +229,13 @@ impl State for GameState {
 
     fn update(&mut self, window: &mut Window) -> quicksilver::Result<()> {
         let input = Input {
-            down: window.keyboard()[quicksilver::input::Key::S].is_down(),
-            left: window.keyboard()[quicksilver::input::Key::A].is_down(),
-            up: window.keyboard()[quicksilver::input::Key::W].is_down(),
-            right: window.keyboard()[quicksilver::input::Key::D].is_down(),
+            down: window.keyboard()[Key::S].is_down(),
+            left: window.keyboard()[Key::A].is_down(),
+            up: window.keyboard()[Key::W].is_down(),
+            right: window.keyboard()[Key::D].is_down(),
             fire: window.mouse()[MouseButton::Left].is_down(),
+            dodge: window.mouse()[MouseButton::Right].is_down()
+                || window.keyboard()[Key::LShift].is_down(),
             raw_mouse_pos: window.mouse().pos(),
             mouse_pos: window.mouse().pos()
                 + self
@@ -248,10 +251,10 @@ impl State for GameState {
         let ui_state = (*self.world.read_resource::<UIState>()).clone();
         match ui_state {
             UIState::Title => {
-                if window.keyboard()[quicksilver::input::Key::Escape] == ButtonState::Pressed {
+                if window.keyboard()[Key::Escape] == ButtonState::Pressed {
                     window.close();
                 }
-                if window.keyboard()[quicksilver::input::Key::Space] == ButtonState::Pressed {
+                if window.keyboard()[Key::Space] == ButtonState::Pressed {
                     self.world.add_resource(UIState::WorldMap);
                 }
                 Ok(())
@@ -264,7 +267,7 @@ impl State for GameState {
             }
             UIState::Playing => {
                 // Noclip mode, a bit hacky.
-                if window.keyboard()[quicksilver::input::Key::N] == ButtonState::Pressed {
+                if window.keyboard()[Key::N] == ButtonState::Pressed {
                     let player = self.world.read_resource::<Camera>().follow;
                     if self.world.read_storage::<HitBox>().get(player).is_some() {
                         self.world.write_storage::<HitBox>().remove(player);
@@ -285,8 +288,8 @@ impl State for GameState {
                 Ok(())
             }
             UIState::Victory => {
-                if window.keyboard()[quicksilver::input::Key::Space] == ButtonState::Pressed
-                    || window.keyboard()[quicksilver::input::Key::Escape] == ButtonState::Pressed
+                if window.keyboard()[Key::Space] == ButtonState::Pressed
+                    || window.keyboard()[Key::Escape] == ButtonState::Pressed
                 {
                     self.world.add_resource(UIState::Title);
                 }
