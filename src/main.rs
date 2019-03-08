@@ -298,7 +298,7 @@ impl State for GameState {
                 self.world.maintain();
                 Ok(())
             }
-            UIState::Victory => {
+            UIState::Victory | UIState::GameOver => {
                 if window.keyboard()[Key::Space] == ButtonState::Pressed
                     || window.keyboard()[Key::Escape] == ButtonState::Pressed
                 {
@@ -306,6 +306,7 @@ impl State for GameState {
                 }
                 Ok(())
             }
+
             _ => panic!("Unimplemented ui state"),
         }
     }
@@ -349,6 +350,16 @@ impl State for GameState {
             }
             UIState::Victory => {
                 draw_text_centered("YOU WIN! :)", Vector::new(400, 300), &self.font, window);
+                draw_text_centered(
+                    "Space or Esc to return to title",
+                    Vector::new(400, 350),
+                    &self.font,
+                    window,
+                );
+                Ok(())
+            }
+            UIState::GameOver => {
+                draw_text_centered("You died. D:", Vector::new(400, 300), &self.font, window);
                 draw_text_centered(
                     "Space or Esc to return to title",
                     Vector::new(400, 350),
