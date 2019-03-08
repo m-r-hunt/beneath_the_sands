@@ -2,7 +2,7 @@ use crate::gameplay::Combative;
 use crate::physics::{TileMap, TILE_SIZE};
 use crate::player::PlayerControls;
 use crate::prelude::*;
-use crate::world_map::{Dungeon, RANGE1, RANGE2};
+use crate::world_map::{Dungeon, Reward, RANGE1, RANGE2};
 use crate::{draw_text_centered, Camera, Input, PlayerProgression};
 use quicksilver::graphics::Font;
 use quicksilver::lifecycle::Window;
@@ -181,7 +181,7 @@ impl<'a: 'b, 'b> System<'b> for WorldMapRender<'a> {
                 &rect,
                 quicksilver::graphics::Background::Col(if d.completed {
                     Color::GREEN
-                } else if d.reward {
+                } else if let Reward::Progress = d.reward {
                     Color::ORANGE
                 } else {
                     Color::RED

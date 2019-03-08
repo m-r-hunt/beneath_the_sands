@@ -7,9 +7,21 @@ use crate::{Input, PlayerProgression, ScreenSize, UIState, TILE_SIZE};
 pub const RANGE1: f32 = 150.0;
 pub const RANGE2: f32 = 300.0;
 
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub enum Item {
+    AttackSpeed,
+    MaxHealth,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub enum Reward {
+    Choice(Item, Item),
+    Progress,
+}
+
 pub struct Dungeon {
     pub position: Vector,
-    pub reward: bool,
+    pub reward: Reward,
     pub completed: bool,
     pub style: LevelStyle,
 }

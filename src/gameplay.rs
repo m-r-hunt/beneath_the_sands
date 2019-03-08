@@ -1,9 +1,9 @@
 use crate::physics::{hitbox_overlap, Bullet, CollidingWithWall, HitBox};
 use crate::player::PlayerControls;
 use crate::prelude::*;
-use crate::world_map::{CurrentDungeon, Dungeon};
+use crate::world_map::{CurrentDungeon, Dungeon, Reward};
 use crate::UIState;
-use crate::{Event, EventQueue, PlayerProgression};
+use crate::{Event, EventQueue};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum Team {
@@ -101,7 +101,6 @@ impl<'a> System<'a> for ExitSystem {
         ReadStorage<'a, HitBox>,
         Write<'a, CurrentDungeon>,
         WriteStorage<'a, Dungeon>,
-        Write<'a, PlayerProgression>,
         ReadStorage<'a, LevelObject>,
         Entities<'a>,
     );
@@ -116,7 +115,6 @@ impl<'a> System<'a> for ExitSystem {
             hitboxes,
             current_dungeon,
             mut dungeons,
-            mut progression,
             level_objects,
             entities,
         ): Self::SystemData,
@@ -124,7 +122,6 @@ impl<'a> System<'a> for ExitSystem {
         for (exit_transform, exit_hitbox, _) in (&transforms, &hitboxes, &exits).join() {
             for (player_transform, player_hitbox, _) in (&transforms, &hitboxes, &players).join() {
                 if hitbox_overlap(player_transform, player_hitbox, exit_transform, exit_hitbox) {
-                    *ui_state = UIState::WorldMap;
                     let current_dungeon = current_dungeon
                         .entity
                         .expect("We should be playing a dungeon when we hit an exit.");
@@ -132,14 +129,17 @@ impl<'a> System<'a> for ExitSystem {
                         .get_mut(current_dungeon)
                         .expect("The current dungeon should be valid when hitting an exit.");
                     current_dungeon.completed = true;
-                    if current_dungeon.reward && !progression.range_extended {
-                        progression.range_extended = true;
-                    } else if current_dungeon.reward {
-                        *ui_state = UIState::Victory;
-                    }
-
                     for (_, ent) in (&level_objects, &entities).join() {
                         entities.delete(ent).unwrap();
+                    }
+                    match current_dungeon.reward {
+                        Reward::Progress => {
+                            // Set up for boss fight
+                            *ui_state = UIState::BossFight;
+                        }
+                        Reward::Choice(_item1, _item2) => {
+                            *ui_state = UIState::Choice;
+                        }
                     }
                 }
             }

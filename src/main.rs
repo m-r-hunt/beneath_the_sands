@@ -144,6 +144,8 @@ pub enum UIState {
     Pause,
     GameOver,
     Victory,
+    BossFight,
+    Choice,
 }
 
 impl Default for UIState {
