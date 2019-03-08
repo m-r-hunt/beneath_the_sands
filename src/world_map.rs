@@ -81,6 +81,18 @@ impl<'a> System<'a> for WorldMapScreen {
                         ),
                     })
                     .build();
+                for cp in level.chode_positions {
+                    lazy_update
+                        .create_entity(&entities)
+                        .with_chode_prefab()
+                        .with(Transform {
+                            position: Vector::new(
+                                cp.0 as f32 * TILE_SIZE + TILE_SIZE / 2.0,
+                                cp.1 as f32 * TILE_SIZE + TILE_SIZE / 2.0,
+                            ),
+                        })
+                        .build();
+                }
                 current_dungeon.entity = Some(e);
             }
         }

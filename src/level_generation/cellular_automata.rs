@@ -109,9 +109,18 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
         }
     }
 
+    let mut chode_positions = Vec::new();
+    for _ in 0..30 {
+        let p = (rng.gen_range(0, LEVEL_SIZE), rng.gen_range(0, LEVEL_SIZE));
+        if level[&p] == 0 {
+            chode_positions.push(p);
+        }
+    }
+
     Ok(GeneratedLevel {
         tile_map: TileMap { tiles },
         start_position,
         exit_position,
+        chode_positions,
     })
 }

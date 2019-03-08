@@ -30,13 +30,11 @@ impl<'a> System<'a> for CollisionHandler {
 
     fn run(&mut self, (entities, event_queue, destructables): Self::SystemData) {
         for event in event_queue.iter() {
-            match event {
-                Event::Collision(entity, _bullet) => {
-                    if destructables.get(*entity).is_some() {
-                        entities
-                            .delete(*entity)
-                            .expect("We just got this entity out so it should be valid.");
-                    }
+            if let Event::Collision(entity, _bullet) = event {
+                if destructables.get(*entity).is_some() {
+                    entities
+                        .delete(*entity)
+                        .expect("We just got this entity out so it should be valid.");
                 }
             }
         }
@@ -124,6 +122,45 @@ impl<'a> System<'a> for ExitSystem {
                     }
                 }
             }
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct Combative {
+    pub max_hp: i32,
+    pub damage: i32,
+}
+
+impl Component for Combative {
+    type Storage = VecStorage<Self>;
+}
+
+pub struct CombativeCollisionHandler;
+
+impl<'a> System<'a> for CombativeCollisionHandler {
+    type SystemData = (
+        Entities<'a>,
+        Write<'a, EventQueue>,
+        WriteStorage<'a, Combative>,
+    );
+
+    fn run(&mut self, (entities, mut event_queue, mut combatives): Self::SystemData) {
+        let mut new_events = Vec::new();
+        for event in event_queue.iter() {
+            if let Event::Collision(entity, bullet) = event {
+                if combatives.get(*entity).is_some() {
+                    let c = combatives.get_mut(*entity).unwrap();
+                    c.damage += 1;
+                    if c.damage >= c.max_hp {
+                        new_events.push(Event::EntityKilled(*entity));
+                    }
+                    entities.delete(*bullet).unwrap();
+                }
+            }
+        }
+        for e in new_events {
+            event_queue.enqueue(e);
         }
     }
 }

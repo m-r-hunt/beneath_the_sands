@@ -1,0 +1,13 @@
+Prefab(
+    name: "chode",
+    components: [
+	(name: "RenderComponent", properties: [
+            (name: "radius", value: "10.0"),
+            (name: "colour", value: "Color::RED"),
+        ]),
+	(name: "HitBox", properties: [(name: "radius", value: "10.0")]),
+	(name: "ChodeAI"),
+	(name: "PhysicsComponent", properties: [(name: "max_speed", value: "5.0")]),
+	(name: "Combative", properties: [(name: "max_hp", value: "1")]),
+    ],
+)

@@ -27,7 +27,7 @@ mod player;
 use player::PlayerControlSystem;
 
 mod gameplay;
-use gameplay::{BulletSelfDestruct, CollisionHandler, ExitSystem};
+use gameplay::{BulletSelfDestruct, CollisionHandler, CombativeCollisionHandler, ExitSystem};
 
 mod render;
 use render::{Render, RenderCursor, TileMapRender, WorldMapRender};
@@ -43,8 +43,12 @@ mod world_generation;
 mod world_map;
 use world_map::{CurrentDungeon, Dungeon, WorldMapScreen};
 
+mod enemy_ai;
+use enemy_ai::ChodeDeath;
+
 mod all_components {
-    pub use crate::gameplay::{Destructable, Exit, LevelObject};
+    pub use crate::enemy_ai::ChodeAI;
+    pub use crate::gameplay::{Combative, Destructable, Exit, LevelObject};
     pub use crate::physics::{Bullet, CollidingWithWall, HitBox, PhysicsComponent, Transform};
     pub use crate::player::PlayerControls;
     pub use crate::render::RenderComponent;
@@ -108,6 +112,7 @@ pub struct Input {
 #[derive(Debug, Copy, Clone)]
 pub enum Event {
     Collision(Entity, Entity),
+    EntityKilled(Entity),
 }
 
 #[derive(Debug, Default, Clone)]
@@ -192,6 +197,8 @@ impl State for GameState {
         world.register::<Exit>();
         world.register::<Destructable>();
         world.register::<LevelObject>();
+        world.register::<Combative>();
+        world.register::<ChodeAI>();
 
         let player = world
             .create_entity()
@@ -365,6 +372,12 @@ fn make_dispatcher<'a, 'b>() -> Dispatcher<'a, 'b> {
             "collision_handler",
             &["collision_detection"],
         )
+        .with(
+            CombativeCollisionHandler,
+            "combative_collision_handler",
+            &["collision_detection"],
+        )
+        .with(ChodeDeath, "chode_death", &["combative_collision_handler"])
         .with(BulletSelfDestruct, "bullet_self_destruct", &["physics"])
         .with(ExitSystem, "exit", &["physics"])
         .build()

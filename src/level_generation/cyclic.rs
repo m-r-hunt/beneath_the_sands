@@ -39,6 +39,7 @@ fn manhatten_distance(from: (i32, i32), to: (i32, i32)) -> i32 {
 }
 
 pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
+    let mut chode_positions = Vec::new();
     let mut rng = rand::thread_rng();
     let mut tile_map: TileMap = Default::default();
     // Assume start position is always 0, 0
@@ -173,9 +174,11 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
 
     for room in path.iter() {
         carve_room(*room, (10, 10), &mut tile_map);
+        chode_positions.push((room.0 * 20 + 5, room.1 * 20 + 5));
     }
     for room in side_path.iter() {
         carve_room(*room, (10, 10), &mut tile_map);
+        chode_positions.push((room.0 * 20 + 5, room.1 * 20 + 5));
     }
     for i in 0..path.len() - 1 {
         let dx = path[i + 1].0 - path[i].0;
@@ -373,5 +376,6 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
         tile_map,
         start_position: (5, 5),
         exit_position,
+        chode_positions,
     })
 }
