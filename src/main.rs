@@ -27,10 +27,12 @@ mod player;
 use player::{PlayerControlSystem, PlayerDeath};
 
 mod gameplay;
-use gameplay::{BulletSelfDestruct, CollisionHandler, CombativeCollisionHandler, ExitSystem};
+use gameplay::{
+    BulletSelfDestruct, ChoiceSystem, CollisionHandler, CombativeCollisionHandler, ExitSystem,
+};
 
 mod render;
-use render::{Render, RenderCursor, RenderUI, TileMapRender, WorldMapRender};
+use render::{Render, RenderChoice, RenderCursor, RenderUI, TileMapRender, WorldMapRender};
 
 mod prefabs;
 use prefabs::PrefabBuilder;
@@ -109,6 +111,7 @@ pub struct Input {
     dodge: bool,
     raw_mouse_pos: Vector,
     mouse_pos: Vector,
+    clicked: bool,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -254,6 +257,7 @@ impl State for GameState {
                     .world
                     .read_resource::<Camera>()
                     .get_position(&self.world.read_storage(), window),
+            clicked: window.mouse()[MouseButton::Left] == ButtonState::Pressed,
         };
         self.world.add_resource(input);
         self.world.add_resource(ScreenSize {
@@ -306,6 +310,10 @@ impl State for GameState {
                 {
                     self.world.add_resource(UIState::Title);
                 }
+                Ok(())
+            }
+            UIState::Choice => {
+                ChoiceSystem.run_now(&self.world.res);
                 Ok(())
             }
 
@@ -368,6 +376,16 @@ impl State for GameState {
                     &self.font,
                     window,
                 );
+                Ok(())
+            }
+            UIState::Choice => {
+                let mut render_choice = RenderChoice {
+                    window,
+                    font: &self.font,
+                };
+                render_choice.run_now(&self.world.res);
+                let mut render_cursor = RenderCursor { window };
+                render_cursor.run_now(&self.world.res);
                 Ok(())
             }
             _ => panic!("Unimplented ui state"),

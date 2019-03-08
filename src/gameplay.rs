@@ -1,9 +1,8 @@
 use crate::physics::{hitbox_overlap, Bullet, CollidingWithWall, HitBox};
 use crate::player::PlayerControls;
 use crate::prelude::*;
-use crate::world_map::{CurrentDungeon, Dungeon, Reward};
-use crate::UIState;
-use crate::{Event, EventQueue};
+use crate::world_map::{CurrentDungeon, Dungeon, Item, Reward};
+use crate::{Event, EventQueue, Input, ScreenSize, UIState};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum Team {
@@ -182,6 +181,64 @@ impl<'a> System<'a> for CombativeCollisionHandler {
         }
         for e in new_events {
             event_queue.enqueue(e);
+        }
+    }
+}
+
+fn apply_upgrade<'a>(
+    item: Item,
+    mut players: WriteStorage<'a, PlayerControls>,
+    mut combatives: WriteStorage<'a, Combative>,
+) {
+    match item {
+        Item::AttackSpeed => {
+            for p in (&mut players).join() {
+                p.fire_rate -= 0.1;
+            }
+        }
+        Item::MaxHealth => {
+            for (_, c) in (&players, &mut combatives).join() {
+                c.max_hp += 1;
+            }
+        }
+    }
+}
+
+pub struct ChoiceSystem;
+
+impl<'a> System<'a> for ChoiceSystem {
+    type SystemData = (
+        Read<'a, Input>,
+        Read<'a, CurrentDungeon>,
+        Read<'a, ScreenSize>,
+        Write<'a, UIState>,
+        WriteStorage<'a, PlayerControls>,
+        WriteStorage<'a, Combative>,
+        WriteStorage<'a, Dungeon>,
+    );
+
+    fn run(
+        &mut self,
+        (input, current_dungeon, screen_size, mut ui_state, players, combatives, dungeons): Self::SystemData,
+    ) {
+        let current_dungeon = current_dungeon
+            .entity
+            .expect("We should be playing a dungeon when we hit are doing choice.");
+        let current_dungeon = dungeons
+            .get(current_dungeon)
+            .expect("The current dungeon should be valid when are doing choice.");
+        let mouse_pos = input.raw_mouse_pos;
+        if input.clicked {
+            if let Reward::Choice(item1, item2) = current_dungeon.reward {
+                if mouse_pos.x > screen_size.size.x / 2.0 {
+                    apply_upgrade(item2, players, combatives);
+                } else {
+                    apply_upgrade(item1, players, combatives);
+                }
+                *ui_state = UIState::WorldMap;
+            } else {
+                panic!("Bad choice state");
+            }
         }
     }
 }

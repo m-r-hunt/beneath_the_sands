@@ -7,7 +7,7 @@ use crate::{Input, PlayerProgression, ScreenSize, UIState, TILE_SIZE};
 pub const RANGE1: f32 = 150.0;
 pub const RANGE2: f32 = 300.0;
 
-#[derive(Copy, Clone, Eq, PartialEq)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum Item {
     AttackSpeed,
     MaxHealth,

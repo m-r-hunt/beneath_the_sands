@@ -3,7 +3,7 @@ use crate::physics::{TileMap, TILE_SIZE};
 use crate::player::PlayerControls;
 use crate::prelude::*;
 use crate::world_map::{Dungeon, Reward, RANGE1, RANGE2};
-use crate::{draw_text_centered, Camera, Input, PlayerProgression};
+use crate::{draw_text_centered, Camera, CurrentDungeon, Input, PlayerProgression};
 use quicksilver::graphics::Font;
 use quicksilver::lifecycle::Window;
 
@@ -203,5 +203,45 @@ impl<'a: 'b, 'b> System<'b> for WorldMapRender<'a> {
         );
 
         draw_cursor(input.raw_mouse_pos, self.window);
+    }
+}
+
+pub struct RenderChoice<'a> {
+    pub window: &'a mut Window,
+    pub font: &'a Font,
+}
+
+impl<'a: 'b, 'b> System<'b> for RenderChoice<'a> {
+    type SystemData = (Read<'b, CurrentDungeon>, ReadStorage<'b, Dungeon>);
+
+    fn run(&mut self, (current_dungeon, dungeons): Self::SystemData) {
+        let current_dungeon = current_dungeon
+            .entity
+            .expect("We should be playing a dungeon when we hit are doing choice.");
+        let current_dungeon = dungeons
+            .get(current_dungeon)
+            .expect("The current dungeon should be valid when are doing choice.");
+        if let Reward::Choice(item1, item2) = current_dungeon.reward {
+            draw_text_centered(
+                "Choose Upgrade:",
+                Vector::new(400, 150),
+                &self.font,
+                self.window,
+            );
+            draw_text_centered(
+                &format!("{:?}", item1),
+                Vector::new(150, 300),
+                &self.font,
+                self.window,
+            );
+            draw_text_centered(
+                &format!("{:?}", item2),
+                Vector::new(650, 300),
+                &self.font,
+                self.window,
+            );
+        } else {
+            panic!("Bad choice state");
+        }
     }
 }

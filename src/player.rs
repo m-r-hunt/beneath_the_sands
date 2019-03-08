@@ -10,6 +10,7 @@ const DODGE_COOLDOWN: f32 = 2.0;
 
 #[derive(Default)]
 pub struct PlayerControls {
+    pub fire_rate: f32,
     pub fire_cooldown: Timer,
     pub dodge_cooldown: Timer,
 }
@@ -97,7 +98,9 @@ impl<'a> System<'a> for PlayerControlSystem {
                     })
                     .with(TeamWrap { team: Team::Player })
                     .build();
-                player_controls.fire_cooldown.set(*sim_time, 0.7);
+                player_controls
+                    .fire_cooldown
+                    .set(*sim_time, player_controls.fire_rate);
             }
             if input.dodge
                 && player_controls.dodge_cooldown.expired(*sim_time)
