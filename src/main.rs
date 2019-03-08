@@ -24,13 +24,13 @@ mod physics;
 use physics::{CollisionDetection, PhysicsSystem, TileMap, TILE_SIZE};
 
 mod player;
-use player::PlayerControlSystem;
+use player::{PlayerControlSystem, PlayerDeath};
 
 mod gameplay;
 use gameplay::{BulletSelfDestruct, CollisionHandler, CombativeCollisionHandler, ExitSystem};
 
 mod render;
-use render::{Render, RenderCursor, TileMapRender, WorldMapRender};
+use render::{Render, RenderCursor, RenderUI, TileMapRender, WorldMapRender};
 
 mod prefabs;
 use prefabs::PrefabBuilder;
@@ -44,11 +44,11 @@ mod world_map;
 use world_map::{CurrentDungeon, Dungeon, WorldMapScreen};
 
 mod enemy_ai;
-use enemy_ai::ChodeDeath;
+use enemy_ai::{ChodeDeath, RunChodeAI};
 
 mod all_components {
     pub use crate::enemy_ai::ChodeAI;
-    pub use crate::gameplay::{Combative, Destructable, Exit, LevelObject};
+    pub use crate::gameplay::{Combative, Destructable, Exit, LevelObject, Team, TeamWrap};
     pub use crate::physics::{Bullet, CollidingWithWall, HitBox, PhysicsComponent, Transform};
     pub use crate::player::PlayerControls;
     pub use crate::render::RenderComponent;
@@ -58,6 +58,7 @@ use all_components::*;
 mod prelude {
     pub use crate::physics::Transform;
     pub use crate::prefabs::PrefabBuilder;
+    pub use crate::{SimTime, Timer};
     pub use quicksilver::geom::*;
     pub use quicksilver::graphics::Color;
     pub use rand::Rng;
@@ -68,6 +69,7 @@ use prelude::*;
 #[derive(Copy, Clone, Debug, Default)]
 pub struct SimTime {
     time: f32,
+    dt: f32,
 }
 
 #[derive(Copy, Clone, Debug, Default)]
@@ -199,6 +201,7 @@ impl State for GameState {
         world.register::<LevelObject>();
         world.register::<Combative>();
         world.register::<ChodeAI>();
+        world.register::<TeamWrap>();
 
         let player = world
             .create_entity()
@@ -288,6 +291,7 @@ impl State for GameState {
 
                 let mut sim_time = *self.world.read_resource::<SimTime>();
                 sim_time.time += 1.0 / 60.0; // Quicksilver tries to call at 60fps
+                sim_time.dt = 1.0 / 60.0;
                 self.world.add_resource(sim_time);
                 self.world.write_resource::<EventQueue>().clear();
                 self.dispatcher.dispatch(&self.world.res);
@@ -334,6 +338,11 @@ impl State for GameState {
                 tilemap_render.run_now(&self.world.res);
                 let mut render = Render { window };
                 render.run_now(&self.world.res);
+                let mut render_ui = RenderUI {
+                    window,
+                    font: &self.font,
+                };
+                render_ui.run_now(&self.world.res);
                 let mut render_cursor = RenderCursor { window };
                 render_cursor.run_now(&self.world.res);
                 Ok(())
@@ -365,7 +374,12 @@ fn draw_text_centered(text: &str, position: Vector, font: &Font, window: &mut Wi
 fn make_dispatcher<'a, 'b>() -> Dispatcher<'a, 'b> {
     DispatcherBuilder::new()
         .with(PlayerControlSystem, "player_control", &[])
-        .with(PhysicsSystem, "physics", &["player_control"])
+        .with(RunChodeAI, "run_chode_ai", &[])
+        .with(
+            PhysicsSystem,
+            "physics",
+            &["player_control", "run_chode_ai"],
+        )
         .with(CollisionDetection, "collision_detection", &["physics"])
         .with(
             CollisionHandler,
@@ -378,6 +392,11 @@ fn make_dispatcher<'a, 'b>() -> Dispatcher<'a, 'b> {
             &["collision_detection"],
         )
         .with(ChodeDeath, "chode_death", &["combative_collision_handler"])
+        .with(
+            PlayerDeath,
+            "player_death",
+            &["combative_collision_handler"],
+        )
         .with(BulletSelfDestruct, "bullet_self_destruct", &["physics"])
         .with(ExitSystem, "exit", &["physics"])
         .build()

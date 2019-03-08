@@ -1,8 +1,10 @@
+use crate::gameplay::{Team, TeamWrap};
 use crate::physics::{check_collision, HitBox, PhysicsComponent, TileMap};
 use crate::prelude::*;
+use crate::{Event, EventQueue, UIState};
 use crate::{Input, SimTime, Timer};
 
-const PLAYER_ACCELERATION: f32 = 10.0;
+const PLAYER_ACCELERATION: f32 = 1000.0;
 const DODGE_DISTANCE: i32 = 45;
 const DODGE_COOLDOWN: f32 = 2.0;
 
@@ -78,10 +80,10 @@ impl<'a> System<'a> for PlayerControlSystem {
             } else if physics.velocity.len2() >= std::f32::EPSILON {
                 physics.velocity = physics
                     .velocity
-                    .with_len((physics.velocity.len() - 5.0).max(0.0));
+                    .with_len((physics.velocity.len() - 90.0).max(0.0));
             }
             if input.fire && player_controls.fire_cooldown.expired(*sim_time) {
-                let bullet_speed = 10.0;
+                let bullet_speed = 400.0;
                 let velocity = (input.mouse_pos - transform.position).with_len(bullet_speed);
                 let position = transform.position + velocity.with_len(30.0);
                 lazy_update
@@ -93,6 +95,7 @@ impl<'a> System<'a> for PlayerControlSystem {
                         max_speed: bullet_speed,
                         ..Default::default()
                     })
+                    .with(TeamWrap { team: Team::Player })
                     .build();
                 player_controls.fire_cooldown.set(*sim_time, 0.7);
             }
@@ -124,6 +127,26 @@ impl<'a> System<'a> for PlayerControlSystem {
                     }
                 }
                 transform.position = Vector::new(the_position.0 as f32, the_position.1 as f32);
+            }
+        }
+    }
+}
+
+pub struct PlayerDeath;
+
+impl<'a> System<'a> for PlayerDeath {
+    type SystemData = (
+        Read<'a, EventQueue>,
+        ReadStorage<'a, PlayerControls>,
+        Write<'a, UIState>,
+    );
+
+    fn run(&mut self, (event_queue, players, mut ui_state): Self::SystemData) {
+        for event in event_queue.iter() {
+            if let Event::EntityKilled(ent) = event {
+                if players.get(*ent).is_some() {
+                    *ui_state = UIState::GameOver;
+                }
             }
         }
     }

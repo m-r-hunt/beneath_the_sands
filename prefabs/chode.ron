@@ -7,7 +7,9 @@ Prefab(
         ]),
 	(name: "HitBox", properties: [(name: "radius", value: "10.0")]),
 	(name: "ChodeAI"),
-	(name: "PhysicsComponent", properties: [(name: "max_speed", value: "5.0")]),
+	(name: "PhysicsComponent", properties: [(name: "max_speed", value: "50.0")]),
 	(name: "Combative", properties: [(name: "max_hp", value: "1")]),
+	(name: "LevelObject"),
+	(name: "TeamWrap", properties: [(name: "team", value: "Team::Enemy")]),
     ],
 )

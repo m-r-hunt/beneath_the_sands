@@ -5,6 +5,28 @@ use crate::world_map::{CurrentDungeon, Dungeon};
 use crate::UIState;
 use crate::{Event, EventQueue, PlayerProgression};
 
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub enum Team {
+    Unaligned,
+    Player,
+    Enemy,
+}
+
+#[derive(Default, Copy, Clone, Eq, PartialEq)]
+pub struct TeamWrap {
+    pub team: Team,
+}
+
+impl Default for Team {
+    fn default() -> Self {
+        Team::Unaligned
+    }
+}
+
+impl Component for TeamWrap {
+    type Storage = VecStorage<Self>;
+}
+
 #[derive(Default)]
 pub struct Destructable;
 

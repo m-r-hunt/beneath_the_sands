@@ -1,3 +1,4 @@
+use crate::gameplay::TeamWrap;
 use crate::prelude::*;
 use crate::{Event, EventQueue};
 use std::collections::HashMap;
@@ -64,6 +65,7 @@ pub struct PhysicsSystem;
 impl<'a> System<'a> for PhysicsSystem {
     type SystemData = (
         Entities<'a>,
+        Read<'a, SimTime>,
         WriteStorage<'a, Transform>,
         WriteStorage<'a, PhysicsComponent>,
         ReadStorage<'a, HitBox>,
@@ -73,10 +75,18 @@ impl<'a> System<'a> for PhysicsSystem {
 
     fn run(
         &mut self,
-        (entities, mut transforms, mut physics, hitboxes, tilemap, mut colliding_with_walls): Self::SystemData,
+        (
+            entities,
+            sim_time,
+            mut transforms,
+            mut physics,
+            hitboxes,
+            tilemap,
+            mut colliding_with_walls,
+        ): Self::SystemData,
     ) {
         for physics in (&mut physics).join() {
-            physics.velocity += physics.acceleration;
+            physics.velocity += physics.acceleration * sim_time.dt;
             if physics.velocity.len2() >= physics.max_speed * physics.max_speed {
                 physics.velocity = physics.velocity.with_len(physics.max_speed);
             }
@@ -89,7 +99,7 @@ impl<'a> System<'a> for PhysicsSystem {
                 hitbox,
                 &tilemap
             ));
-            let new_position = transform.position + physics.velocity;
+            let new_position = transform.position + physics.velocity * sim_time.dt;
             let old_x = transform.position.x.floor() as i32;
             let new_x = new_position.x.floor() as i32;
             let dx = sign(new_x - old_x);
@@ -141,7 +151,7 @@ impl<'a> System<'a> for PhysicsSystem {
         for (entity, transform, physics, _) in
             (&entities, &mut transforms, &physics, !&hitboxes).join()
         {
-            let new_position = transform.position + physics.velocity;
+            let new_position = transform.position + physics.velocity * sim_time.dt;
             transform.position = new_position;
 
             let colliding = check_point_collision(new_position, &tilemap);
@@ -205,17 +215,22 @@ impl<'a> System<'a> for CollisionDetection {
         ReadStorage<'a, Transform>,
         ReadStorage<'a, HitBox>,
         ReadStorage<'a, Bullet>,
+        ReadStorage<'a, TeamWrap>,
         Entities<'a>,
         Write<'a, EventQueue>,
     );
 
-    fn run(&mut self, (transforms, hitbox, bullet, entities, mut event_queue): Self::SystemData) {
-        for (transform, hitbox, entity) in (&transforms, &hitbox, &entities).join() {
-            for (bullet_transform, bullet_entity, bullet) in
-                (&transforms, &entities, &bullet).join()
+    fn run(
+        &mut self,
+        (transforms, hitbox, bullet, teams, entities, mut event_queue): Self::SystemData,
+    ) {
+        for (transform, hitbox, team, entity) in (&transforms, &hitbox, &teams, &entities).join() {
+            for (bullet_transform, bullet_entity, bullet, bullet_team) in
+                (&transforms, &entities, &bullet, &teams).join()
             {
-                if (bullet_transform.position - transform.position).len()
-                    < hitbox.radius + bullet.radius
+                if team.team != bullet_team.team
+                    && (bullet_transform.position - transform.position).len()
+                        < hitbox.radius + bullet.radius
                 {
                     event_queue.enqueue(Event::Collision(entity, bullet_entity));
                 }

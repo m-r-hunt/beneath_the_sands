@@ -1,7 +1,10 @@
+use crate::gameplay::Combative;
 use crate::physics::{TileMap, TILE_SIZE};
+use crate::player::PlayerControls;
 use crate::prelude::*;
 use crate::world_map::{Dungeon, RANGE1, RANGE2};
-use crate::{Camera, Input, PlayerProgression};
+use crate::{draw_text_centered, Camera, Input, PlayerProgression};
+use quicksilver::graphics::Font;
 use quicksilver::lifecycle::Window;
 
 pub struct TileMapRender<'a> {
@@ -72,6 +75,26 @@ impl<'a: 'b, 'b> System<'b> for Render<'a> {
             self.window.draw(
                 &circle,
                 quicksilver::graphics::Background::Col(render.colour),
+            );
+        }
+    }
+}
+
+pub struct RenderUI<'a> {
+    pub window: &'a mut Window,
+    pub font: &'a Font,
+}
+
+impl<'a: 'b, 'b> System<'b> for RenderUI<'a> {
+    type SystemData = (ReadStorage<'b, PlayerControls>, ReadStorage<'b, Combative>);
+
+    fn run(&mut self, (players, combative): Self::SystemData) {
+        for (_, c) in (&players, &combative).join() {
+            draw_text_centered(
+                &format!("Health: {} / {}", c.max_hp - c.damage, c.max_hp),
+                Vector::new(50, 25),
+                &self.font,
+                self.window,
             );
         }
     }

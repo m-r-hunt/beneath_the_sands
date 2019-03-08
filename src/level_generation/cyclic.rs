@@ -174,6 +174,9 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
 
     for room in path.iter() {
         carve_room(*room, (10, 10), &mut tile_map);
+        if *room == (0, 0) {
+            continue;
+        }
         chode_positions.push((room.0 * 20 + 5, room.1 * 20 + 5));
     }
     for room in side_path.iter() {
