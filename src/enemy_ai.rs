@@ -318,6 +318,7 @@ impl Component for Boss {
 pub enum BossAttack {
     Lines,
     Sideswipe,
+    RandomBurst,
 }
 
 pub struct RunBossAI;
@@ -408,6 +409,27 @@ impl<'a> System<'a> for RunBossAI {
                                     .with(PenetratingBullet)
                                     .build();
                             }
+                        }
+                    }
+                    BossAttack::RandomBurst => {
+                        let mut rng = rand::thread_rng();
+                        for _b in 0..rng.gen_range(50, 60) {
+                            let angle = rng.gen_range(0.0, 180.0);
+                            let speed = rng.gen_range(100.0, 600.0);
+                            lazy_update
+                                .create_entity(&entities)
+                                .with_bullet_prefab()
+                                .with(Transform {
+                                    position: transform.position,
+                                })
+                                .with(PhysicsComponent {
+                                    velocity: Vector::from_angle(angle).with_len(speed),
+                                    max_speed: speed,
+                                    ..Default::default()
+                                })
+                                .with(TeamWrap { team: Team::Enemy })
+                                .with(PenetratingBullet)
+                                .build();
                         }
                     }
                 }

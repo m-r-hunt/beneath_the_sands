@@ -10,7 +10,8 @@ const FLOOR: Tile = Tile {
     colour: rgba!(223, 201, 96, 1.0),
 };
 
-pub const BOSS_ARENA_SIZE: i32 = 10;
+pub const BOSS_ARENA_SIZE_X: i32 = 10;
+pub const BOSS_ARENA_SIZE_Y: i32 = 8;
 
 #[derive(Copy, Clone, Debug)]
 pub enum LevelStyle {
@@ -54,13 +55,13 @@ mod cyclic;
 
 pub fn make_boss_arena() -> TileMap {
     let mut out: TileMap = Default::default();
-    for x in -BOSS_ARENA_SIZE - 1..=BOSS_ARENA_SIZE + 1 {
-        for y in -BOSS_ARENA_SIZE - 1..=BOSS_ARENA_SIZE + 1 {
+    for x in -BOSS_ARENA_SIZE_X - 1..=BOSS_ARENA_SIZE_X + 1 {
+        for y in -BOSS_ARENA_SIZE_Y - 1..=BOSS_ARENA_SIZE_Y + 1 {
             out.tiles.insert((x, y), WALL);
         }
     }
-    for x in -BOSS_ARENA_SIZE..=BOSS_ARENA_SIZE {
-        for y in -BOSS_ARENA_SIZE..=BOSS_ARENA_SIZE {
+    for x in -BOSS_ARENA_SIZE_X..=BOSS_ARENA_SIZE_X {
+        for y in -BOSS_ARENA_SIZE_Y..=BOSS_ARENA_SIZE_Y {
             out.tiles.insert((x, y), FLOOR);
         }
     }

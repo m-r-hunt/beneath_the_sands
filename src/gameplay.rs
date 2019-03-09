@@ -1,5 +1,5 @@
 use crate::enemy_ai::{Boss, BossAttack};
-use crate::level_generation::{self, BOSS_ARENA_SIZE};
+use crate::level_generation::{self, BOSS_ARENA_SIZE_Y};
 use crate::physics::{
     hitbox_overlap, Bullet, CollidingWithWall, HitBox, PhysicsComponent, TileMap, TILE_SIZE,
 };
@@ -165,10 +165,17 @@ impl<'a> System<'a> for ExitSystem {
                         .create_entity(&entities)
                         .with_boss_prefab()
                         .with(Transform {
-                            position: Vector::new(0.0, -(BOSS_ARENA_SIZE as f32 - 2.0) * TILE_SIZE),
+                            position: Vector::new(
+                                0.0,
+                                -(BOSS_ARENA_SIZE_Y as f32 - 2.0) * TILE_SIZE,
+                            ),
                         })
                         .with(Boss {
-                            attacks: vec![BossAttack::Lines, BossAttack::Sideswipe],
+                            attacks: vec![
+                                BossAttack::Lines,
+                                BossAttack::Sideswipe,
+                                BossAttack::RandomBurst,
+                            ],
                             attack_cooldown: Timer::new_set(*sim_time, 3.0),
                             ..Default::default()
                         })
