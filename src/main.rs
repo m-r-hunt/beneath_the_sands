@@ -162,6 +162,7 @@ pub enum UIState {
     GameOver,
     Victory,
     Choice,
+    Help(Box<UIState>, String, String),
 }
 
 impl Default for UIState {
@@ -175,6 +176,7 @@ struct GameState {
     dispatcher: Dispatcher<'static, 'static>,
     font: Font,
     title_image: Asset<Image>,
+    shown_playing_help: bool,
 }
 
 pub struct Camera {
@@ -305,6 +307,7 @@ impl State for GameState {
             dispatcher: make_dispatcher(),
             font,
             title_image,
+            shown_playing_help: false,
         })
     }
 
@@ -333,7 +336,15 @@ impl State for GameState {
                     window.close();
                 }
                 if window.keyboard()[Key::Space] == ButtonState::Pressed {
-                    self.world.add_resource(UIState::WorldMap);
+                    self.world.add_resource(UIState::Help(Box::new(UIState::WorldMap), "World Map".to_string(), "You are searching for the Ankh of Yendor.\nBut alas you have got lost in the desert,\n stranded at an oasis.\n\nThe orange square is a dungeon containing\n an item needed to progress in the game,\n but it is treacherous.\nConsider visiting other dungeons\n in range to stock up on magic items.".to_string()));
+                }
+                Ok(())
+            }
+            UIState::Help(ret, _, _) => {
+                if window.keyboard()[Key::Space] == ButtonState::Pressed
+                    || window.keyboard()[Key::Escape] == ButtonState::Pressed
+                {
+                    self.world.add_resource(*ret);
                 }
                 Ok(())
             }
@@ -400,6 +411,22 @@ impl State for GameState {
                 })?;
                 draw_text_centered("Space to Start", Vector::new(400, 350), &self.font, window);
                 draw_text_centered("Esc to Quit", Vector::new(400, 400), &self.font, window);
+                Ok(())
+            }
+            UIState::Help(_, title, text) => {
+                draw_text_centered(
+                    &format!("Help: {}", title),
+                    Vector::new(400, 50),
+                    &self.font,
+                    window,
+                );
+                draw_text_centered(&text, Vector::new(400, 300), &self.font, window);
+                draw_text_centered(
+                    "Space or Esc to Continue",
+                    Vector::new(400, 550),
+                    &self.font,
+                    window,
+                );
                 Ok(())
             }
             UIState::WorldMap => {
@@ -476,6 +503,7 @@ fn draw_text_centered(text: &str, position: Vector, font: &Font, window: &mut Wi
         .unwrap();
     let mut rect = img.area();
     rect.pos = position - rect.size / 2.0;
+    rect.pos = Vector::new(rect.pos.x.floor(), rect.pos.y.floor());
     window.draw(&rect, quicksilver::graphics::Background::Img(&img));
 }
 
