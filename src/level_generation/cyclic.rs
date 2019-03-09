@@ -170,31 +170,39 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
         if *room == (0, 0) {
             continue;
         }
-        chode_positions.push((
-            room.0 * 20 + 5,
-            room.1 * 20 + 5,
-            if rng.gen_range(0.0, 1.0) > 0.8 {
-                EnemyType::Shotgunner
-            } else if rng.gen_range(0.0, 1.0) > 0.6 {
-                EnemyType::Spinner
-            } else {
-                EnemyType::Chode
-            },
-        ));
+        let n_enemies = rng.gen_range(0, 5);
+        for _ in 0..n_enemies {
+            let pos = (rng.gen_range(2, 8), rng.gen_range(2, 8));
+            chode_positions.push((
+                room.0 * 20 + pos.0,
+                room.1 * 20 + pos.1,
+                if rng.gen_range(0.0, 1.0) > 0.8 {
+                    EnemyType::Shotgunner
+                } else if rng.gen_range(0.0, 1.0) > 0.6 {
+                    EnemyType::Spinner
+                } else {
+                    EnemyType::Chode
+                },
+            ));
+        }
     }
     for room in side_path.iter() {
         carve_room(*room, (10, 10), &mut tile_map);
-        chode_positions.push((
-            room.0 * 20 + 5,
-            room.1 * 20 + 5,
-            if rng.gen_range(0.0, 1.0) > 0.8 {
-                EnemyType::Shotgunner
-            } else if rng.gen_range(0.0, 1.0) > 0.6 {
-                EnemyType::Spinner
-            } else {
-                EnemyType::Chode
-            },
-        ));
+        let n_enemies = rng.gen_range(0, 5);
+        for _ in 0..n_enemies {
+            let pos = (rng.gen_range(2, 8), rng.gen_range(2, 8));
+            chode_positions.push((
+                room.0 * 20 + pos.0,
+                room.1 * 20 + pos.1,
+                if rng.gen_range(0.0, 1.0) > 0.8 {
+                    EnemyType::Shotgunner
+                } else if rng.gen_range(0.0, 1.0) > 0.6 {
+                    EnemyType::Spinner
+                } else {
+                    EnemyType::Chode
+                },
+            ));
+        }
     }
     for i in 0..path.len() - 1 {
         let dx = path[i + 1].0 - path[i].0;

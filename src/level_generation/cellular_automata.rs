@@ -105,7 +105,9 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
                 EnemyType::Chode
             },
         );
-        if level[&(p.0, p.1)] == 0 {
+        if level[&(p.0, p.1)] == 0
+            && ((p.0 - start_position.0).abs() >= 10 || (p.1 - start_position.1).abs() >= 10)
+        {
             chode_positions.push(p);
         }
     }
