@@ -13,8 +13,8 @@ pub enum Item {
     MaxHealth,           // Done
     TripleShot,          // Done
     ExtraDamage,         // Done
-    Penetrating,         // Needs work in combative - probably a bullet flag
-    ReduceDodgeCooldown, // Needs work in player var
+    Penetrating,         // Done
+    ReduceDodgeCooldown, // Done
     SpeedIncrease,       // Needs work in player var
     Backfire,            // Needs work in player probably a flag
 }

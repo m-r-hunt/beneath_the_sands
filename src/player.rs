@@ -16,6 +16,7 @@ pub struct PlayerControls {
     pub bullet_damage: i32,
     pub penetrating: bool,
     pub dodge_cooldown_time: f32,
+    pub backfire: bool,
 }
 
 impl Component for PlayerControls {
@@ -131,6 +132,26 @@ impl<'a> System<'a> for PlayerControlSystem {
                     let velocity =
                         Vector::from_angle((input.mouse_pos - transform.position).angle() - 20.0)
                             .with_len(bullet_speed);
+                    let position = transform.position + velocity.with_len(30.0);
+                    lazy_update
+                        .create_entity(&entities)
+                        .with_bullet_prefab()
+                        .with(Bullet {
+                            radius: 5.0,
+                            damage: player_controls.bullet_damage,
+                            penetrating: player_controls.penetrating,
+                        })
+                        .with(Transform { position })
+                        .with(PhysicsComponent {
+                            velocity,
+                            max_speed: bullet_speed,
+                            ..Default::default()
+                        })
+                        .with(TeamWrap { team: Team::Player })
+                        .build();
+                }
+                if player_controls.backfire {
+                    let velocity = (transform.position - input.mouse_pos).with_len(bullet_speed);
                     let position = transform.position + velocity.with_len(30.0);
                     lazy_update
                         .create_entity(&entities)

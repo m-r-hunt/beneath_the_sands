@@ -1,6 +1,8 @@
 use crate::enemy_ai::{Boss, BossAttack};
 use crate::level_generation::{self, BOSS_ARENA_SIZE};
-use crate::physics::{hitbox_overlap, Bullet, CollidingWithWall, HitBox, TileMap, TILE_SIZE};
+use crate::physics::{
+    hitbox_overlap, Bullet, CollidingWithWall, HitBox, PhysicsComponent, TileMap, TILE_SIZE,
+};
 use crate::player::PlayerControls;
 use crate::prelude::*;
 use crate::world_map::{CurrentDungeon, Dungeon, Item, Reward};
@@ -249,6 +251,7 @@ fn apply_upgrade<'a>(
     item: Item,
     players: &mut WriteStorage<'a, PlayerControls>,
     combatives: &mut WriteStorage<'a, Combative>,
+    physics: &mut WriteStorage<'a, PhysicsComponent>,
 ) {
     match item {
         Item::AttackSpeed => {
@@ -281,8 +284,16 @@ fn apply_upgrade<'a>(
                 p.dodge_cooldown_time = 0.9;
             }
         }
-
-        _ => unimplemented!(),
+        Item::Backfire => {
+            for p in (players).join() {
+                p.backfire = true;
+            }
+        }
+        Item::SpeedIncrease => {
+            for (physics, _) in (physics, players).join() {
+                physics.max_speed = 300.0;
+            }
+        }
     }
 }
 
@@ -297,11 +308,21 @@ impl<'a> System<'a> for ChoiceSystem {
         WriteStorage<'a, PlayerControls>,
         WriteStorage<'a, Combative>,
         WriteStorage<'a, Dungeon>,
+        WriteStorage<'a, PhysicsComponent>,
     );
 
     fn run(
         &mut self,
-        (input, current_dungeon, screen_size, mut ui_state, mut players, mut combatives, dungeons): Self::SystemData,
+        (
+            input,
+            current_dungeon,
+            screen_size,
+            mut ui_state,
+            mut players,
+            mut combatives,
+            dungeons,
+            mut physics,
+        ): Self::SystemData,
     ) {
         let current_dungeon = current_dungeon
             .entity
@@ -313,9 +334,9 @@ impl<'a> System<'a> for ChoiceSystem {
         if input.clicked {
             if let Reward::Choice(item1, item2) = current_dungeon.reward {
                 if mouse_pos.x > screen_size.size.x / 2.0 {
-                    apply_upgrade(item2, &mut players, &mut combatives);
+                    apply_upgrade(item2, &mut players, &mut combatives, &mut physics);
                 } else {
-                    apply_upgrade(item1, &mut players, &mut combatives);
+                    apply_upgrade(item1, &mut players, &mut combatives, &mut physics);
                 }
                 for (_, c) in (&players, &mut combatives).join() {
                     c.damage = (c.damage - 1).max(0);
