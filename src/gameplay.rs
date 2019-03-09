@@ -4,7 +4,7 @@ use crate::physics::{hitbox_overlap, Bullet, CollidingWithWall, HitBox, TileMap,
 use crate::player::PlayerControls;
 use crate::prelude::*;
 use crate::world_map::{CurrentDungeon, Dungeon, Item, Reward};
-use crate::{Event, EventQueue, Input, PlayerProgression, ScreenSize, UIState};
+use crate::{Camera, Event, EventQueue, Input, PlayerProgression, ScreenSize, UIState};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum Team {
@@ -105,6 +105,7 @@ impl<'a> System<'a> for ExitSystem {
         WriteStorage<'a, Transform>,
         ReadStorage<'a, Exit>,
         ReadStorage<'a, PlayerControls>,
+        WriteStorage<'a, Camera>,
         Write<'a, UIState>,
         ReadStorage<'a, HitBox>,
         Write<'a, CurrentDungeon>,
@@ -114,6 +115,7 @@ impl<'a> System<'a> for ExitSystem {
         Read<'a, LazyUpdate>,
         Write<'a, TileMap>,
         Read<'a, SimTime>,
+        Read<'a, ScreenSize>,
     );
 
     fn run(
@@ -122,6 +124,7 @@ impl<'a> System<'a> for ExitSystem {
             mut transforms,
             exits,
             players,
+            mut cameras,
             mut ui_state,
             hitboxes,
             current_dungeon,
@@ -131,6 +134,7 @@ impl<'a> System<'a> for ExitSystem {
             lazy_update,
             mut tile_map,
             sim_time,
+            screen_size,
         ): Self::SystemData,
     ) {
         let mut exit = false;
@@ -167,8 +171,16 @@ impl<'a> System<'a> for ExitSystem {
                             ..Default::default()
                         })
                         .build();
+                    let dummy_camera_pos = lazy_update
+                        .create_entity(&entities)
+                        .with_dummy_prefab()
+                        .build();
                     for (player_transform, _) in (&mut transforms, &players).join() {
                         player_transform.position = Vector::new(0.0, 100.0);
+                    }
+                    for (camera_transform, camera) in (&mut transforms, &mut cameras).join() {
+                        camera_transform.position = Vector::new(0.0, 0.0) - screen_size.size / 2.0;
+                        camera.follow = dummy_camera_pos;
                     }
                     *tile_map = level_generation::make_boss_arena();
                 }
