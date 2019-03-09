@@ -240,17 +240,17 @@ impl<'a> System<'a> for CombativeCollisionHandler {
 
 fn apply_upgrade<'a>(
     item: Item,
-    mut players: WriteStorage<'a, PlayerControls>,
-    mut combatives: WriteStorage<'a, Combative>,
+    players: &mut WriteStorage<'a, PlayerControls>,
+    combatives: &mut WriteStorage<'a, Combative>,
 ) {
     match item {
         Item::AttackSpeed => {
-            for p in (&mut players).join() {
+            for p in (players).join() {
                 p.fire_rate -= 0.1;
             }
         }
         Item::MaxHealth => {
-            for (_, c) in (&players, &mut combatives).join() {
+            for (_, c) in (players, combatives).join() {
                 c.max_hp += 1;
             }
         }
@@ -272,7 +272,7 @@ impl<'a> System<'a> for ChoiceSystem {
 
     fn run(
         &mut self,
-        (input, current_dungeon, screen_size, mut ui_state, players, combatives, dungeons): Self::SystemData,
+        (input, current_dungeon, screen_size, mut ui_state, mut players, mut combatives, dungeons): Self::SystemData,
     ) {
         let current_dungeon = current_dungeon
             .entity
@@ -284,9 +284,12 @@ impl<'a> System<'a> for ChoiceSystem {
         if input.clicked {
             if let Reward::Choice(item1, item2) = current_dungeon.reward {
                 if mouse_pos.x > screen_size.size.x / 2.0 {
-                    apply_upgrade(item2, players, combatives);
+                    apply_upgrade(item2, &mut players, &mut combatives);
                 } else {
-                    apply_upgrade(item1, players, combatives);
+                    apply_upgrade(item1, &mut players, &mut combatives);
+                }
+                for (_, c) in (&players, &mut combatives).join() {
+                    c.damage = (c.damage - 1).max(0);
                 }
                 *ui_state = UIState::WorldMap;
             } else {
@@ -306,11 +309,22 @@ impl<'a> System<'a> for BossDeathSystem {
         Entities<'a>,
         Write<'a, UIState>,
         Write<'a, PlayerProgression>,
+        ReadStorage<'a, PlayerControls>,
+        WriteStorage<'a, Combative>,
     );
 
     fn run(
         &mut self,
-        (event_queue, bosses, level_objects, entities, mut ui_state, mut progress): Self::SystemData,
+        (
+            event_queue,
+            bosses,
+            level_objects,
+            entities,
+            mut ui_state,
+            mut progress,
+            players,
+            mut combatives,
+        ): Self::SystemData,
     ) {
         for event in event_queue.iter() {
             if let Event::EntityKilled(ent) = event {
@@ -323,6 +337,9 @@ impl<'a> System<'a> for BossDeathSystem {
                         *ui_state = UIState::WorldMap;
                     } else {
                         *ui_state = UIState::Victory;
+                    }
+                    for (_, c) in (&players, &mut combatives).join() {
+                        c.damage = (c.damage - 1).max(0);
                     }
                 }
             }
