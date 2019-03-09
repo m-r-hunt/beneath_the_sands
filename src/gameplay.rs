@@ -372,6 +372,7 @@ impl<'a> System<'a> for BossDeathSystem {
         Write<'a, PlayerProgression>,
         ReadStorage<'a, PlayerControls>,
         WriteStorage<'a, Combative>,
+        Write<'a, SoundQueue>,
     );
 
     fn run(
@@ -385,11 +386,13 @@ impl<'a> System<'a> for BossDeathSystem {
             mut progress,
             players,
             mut combatives,
+            mut sound_queue,
         ): Self::SystemData,
     ) {
         for event in event_queue.iter() {
             if let Event::EntityKilled(ent) = event {
                 if bosses.get(*ent).is_some() {
+                    sound_queue.enqueue(SoundRequest::BossDeath);
                     for (ent, _) in (&entities, &level_objects).join() {
                         entities.delete(ent).unwrap();
                     }

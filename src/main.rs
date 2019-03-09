@@ -69,6 +69,7 @@ use all_components::*;
 mod prelude {
     pub use crate::physics::Transform;
     pub use crate::prefabs::PrefabBuilder;
+    pub use crate::sound::{SoundQueue, SoundRequest};
     pub use crate::{SimTime, Timer};
     pub use quicksilver::geom::*;
     pub use quicksilver::graphics::Color;
@@ -345,20 +346,25 @@ impl State for GameState {
             UIState::Playing => {
                 if window.keyboard()[Key::Escape] == ButtonState::Pressed {
                     self.world.add_resource(UIState::Pause);
-                } else {
-                    let mut sim_time = *self.world.read_resource::<SimTime>();
-                    sim_time.time += 1.0 / 60.0; // Quicksilver tries to call at 60fps
-                    sim_time.dt = 1.0 / 60.0;
-                    self.world.add_resource(sim_time);
-                    self.world.write_resource::<EventQueue>().clear();
-                    self.dispatcher.dispatch(&self.world.res);
-                    self.world.maintain();
+                    self.world
+                        .write_resource::<SoundQueue>()
+                        .enqueue(SoundRequest::Pause);
                 }
+                let mut sim_time = *self.world.read_resource::<SimTime>();
+                sim_time.time += 1.0 / 60.0; // Quicksilver tries to call at 60fps
+                sim_time.dt = 1.0 / 60.0;
+                self.world.add_resource(sim_time);
+                self.world.write_resource::<EventQueue>().clear();
+                self.dispatcher.dispatch(&self.world.res);
+                self.world.maintain();
                 Ok(())
             }
             UIState::Pause => {
                 if window.keyboard()[Key::Escape] == ButtonState::Pressed {
                     self.world.add_resource(UIState::Playing);
+                    self.world
+                        .write_resource::<SoundQueue>()
+                        .enqueue(SoundRequest::Pause);
                 }
                 Ok(())
             }

@@ -220,13 +220,15 @@ impl<'a> System<'a> for PlayerDeath {
         Read<'a, EventQueue>,
         ReadStorage<'a, PlayerControls>,
         Write<'a, UIState>,
+        Write<'a, SoundQueue>,
     );
 
-    fn run(&mut self, (event_queue, players, mut ui_state): Self::SystemData) {
+    fn run(&mut self, (event_queue, players, mut ui_state, mut sound_queue): Self::SystemData) {
         for event in event_queue.iter() {
             if let Event::EntityKilled(ent) = event {
                 if players.get(*ent).is_some() {
                     *ui_state = UIState::GameOver;
+                    sound_queue.enqueue(SoundRequest::PlayerDeath);
                 }
             }
         }

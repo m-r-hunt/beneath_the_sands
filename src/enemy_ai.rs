@@ -48,11 +48,12 @@ impl<'a> System<'a> for ChodeDeath {
         ReadStorage<'a, ChodeAI>,
         ReadStorage<'a, ShotgunnerAI>,
         ReadStorage<'a, SpinnerAI>,
+        Write<'a, SoundQueue>,
     );
 
     fn run(
         &mut self,
-        (entities, event_queue, chode_ais, shotgunner_ais, spinner_ais): Self::SystemData,
+        (entities, event_queue, chode_ais, shotgunner_ais, spinner_ais, mut sound_queue): Self::SystemData,
     ) {
         for event in event_queue.iter() {
             if let Event::EntityKilled(ent) = event {
@@ -61,6 +62,7 @@ impl<'a> System<'a> for ChodeDeath {
                     || spinner_ais.get(*ent).is_some()
                 {
                     entities.delete(*ent).unwrap();
+                    sound_queue.enqueue(SoundRequest::EnemyDeath);
                 }
             }
         }
@@ -79,6 +81,7 @@ impl<'a> System<'a> for RunChodeAI {
         Read<'a, SimTime>,
         Entities<'a>,
         Read<'a, LazyUpdate>,
+        Write<'a, SoundQueue>,
     );
 
     fn run(
@@ -92,6 +95,7 @@ impl<'a> System<'a> for RunChodeAI {
             sim_time,
             entities,
             lazy_update,
+            mut sound_queue,
         ): Self::SystemData,
     ) {
         let mut player_pos = Vector::new(0.0, 0.0);
@@ -129,6 +133,7 @@ impl<'a> System<'a> for RunChodeAI {
                     .with(TeamWrap { team: Team::Enemy })
                     .build();
                 chode.fire_cooldown.set(*sim_time, CHODE_FIRE_COOLDOWN);
+                sound_queue.enqueue(SoundRequest::EnemyShot);
             }
         }
     }
@@ -146,6 +151,7 @@ impl<'a> System<'a> for RunShotgunnerAI {
         Read<'a, SimTime>,
         Entities<'a>,
         Read<'a, LazyUpdate>,
+        Write<'a, SoundQueue>,
     );
 
     fn run(
@@ -159,6 +165,7 @@ impl<'a> System<'a> for RunShotgunnerAI {
             sim_time,
             entities,
             lazy_update,
+            mut sound_queue,
         ): Self::SystemData,
     ) {
         let mut player_pos = Vector::new(0.0, 0.0);
@@ -232,6 +239,7 @@ impl<'a> System<'a> for RunShotgunnerAI {
                 shotgunner
                     .fire_cooldown
                     .set(*sim_time, SHOTGUNNER_FIRE_COOLDOWN);
+                sound_queue.enqueue(SoundRequest::EnemyShot);
             }
         }
     }
@@ -249,6 +257,7 @@ impl<'a> System<'a> for RunSpinnerAI {
         Read<'a, SimTime>,
         Entities<'a>,
         Read<'a, LazyUpdate>,
+        Write<'a, SoundQueue>,
     );
 
     fn run(
@@ -262,6 +271,7 @@ impl<'a> System<'a> for RunSpinnerAI {
             sim_time,
             entities,
             lazy_update,
+            mut sound_queue,
         ): Self::SystemData,
     ) {
         let mut player_pos = Vector::new(0.0, 0.0);
@@ -299,6 +309,7 @@ impl<'a> System<'a> for RunSpinnerAI {
                     .with(TeamWrap { team: Team::Enemy })
                     .build();
                 spinner.fire_cooldown.set(*sim_time, SPINNER_FIRE_COOLDOWN);
+                sound_queue.enqueue(SoundRequest::EnemyShot);
             }
         }
     }
@@ -330,9 +341,13 @@ impl<'a> System<'a> for RunBossAI {
         Entities<'a>,
         Read<'a, LazyUpdate>,
         Read<'a, SimTime>,
+        Write<'a, SoundQueue>,
     );
 
-    fn run(&mut self, (transforms, mut bosses, entities, lazy_update, sim_time): Self::SystemData) {
+    fn run(
+        &mut self,
+        (transforms, mut bosses, entities, lazy_update, sim_time, mut sound_queue): Self::SystemData,
+    ) {
         for (transform, boss) in (&transforms, &mut bosses).join() {
             if boss.attack_cooldown.expired(*sim_time) {
                 match boss.attacks[boss.current_attack] {
@@ -435,6 +450,7 @@ impl<'a> System<'a> for RunBossAI {
                 }
                 boss.attack_cooldown.set(*sim_time, 5.0);
                 boss.current_attack = (boss.current_attack + 1) % boss.attacks.len();
+                sound_queue.enqueue(SoundRequest::BossShot);
             }
         }
     }

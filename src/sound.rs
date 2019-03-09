@@ -6,6 +6,12 @@ use std::collections::HashMap;
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum SoundRequest {
     PlayerShot,
+    PlayerDeath,
+    EnemyShot,
+    EnemyDeath,
+    BossShot,
+    BossDeath,
+    Pause,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -37,6 +43,30 @@ impl SoundSystem {
         sounds.insert(
             SoundRequest::PlayerShot,
             Asset::new(Sound::load("oryx_8-bit_sounds/abilities/shoot_a.wav")),
+        );
+        sounds.insert(
+            SoundRequest::PlayerDeath,
+            Asset::new(Sound::load("oryx_8-bit_sounds/interface/lose_b.wav")),
+        );
+        sounds.insert(
+            SoundRequest::EnemyShot,
+            Asset::new(Sound::load("oryx_8-bit_sounds/abilities/shoot_b.wav")),
+        );
+        sounds.insert(
+            SoundRequest::EnemyDeath,
+            Asset::new(Sound::load("oryx_8-bit_sounds/impacts/impact_b.wav")),
+        );
+        sounds.insert(
+            SoundRequest::BossShot,
+            Asset::new(Sound::load("oryx_8-bit_sounds/abilities/summon.wav")),
+        );
+        sounds.insert(
+            SoundRequest::BossDeath,
+            Asset::new(Sound::load("oryx_8-bit_sounds/impacts/boom_a.wav")),
+        );
+        sounds.insert(
+            SoundRequest::Pause,
+            Asset::new(Sound::load("oryx_8-bit_sounds/interface/end_turn.wav")),
         );
         SoundSystem { sounds }
     }
