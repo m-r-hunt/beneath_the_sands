@@ -64,6 +64,12 @@ impl<'a> System<'a> for CollisionHandler {
     }
 }
 
+pub struct PenetratingBullet;
+
+impl Component for PenetratingBullet {
+    type Storage = VecStorage<Self>;
+}
+
 pub struct BulletSelfDestruct;
 
 impl<'a> System<'a> for BulletSelfDestruct {
@@ -71,10 +77,11 @@ impl<'a> System<'a> for BulletSelfDestruct {
         Entities<'a>,
         ReadStorage<'a, Bullet>,
         ReadStorage<'a, CollidingWithWall>,
+        ReadStorage<'a, PenetratingBullet>,
     );
 
-    fn run(&mut self, (entities, bullets, colliding): Self::SystemData) {
-        for (entity, _, _) in (&entities, &bullets, &colliding).join() {
+    fn run(&mut self, (entities, bullets, colliding, penetrating): Self::SystemData) {
+        for (entity, _, _, _) in (&entities, &bullets, &colliding, !&penetrating).join() {
             entities
                 .delete(entity)
                 .expect("We just got this entity out so it should be valid.");

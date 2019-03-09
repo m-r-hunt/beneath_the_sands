@@ -1,4 +1,4 @@
-use crate::gameplay::{Team, TeamWrap};
+use crate::gameplay::{PenetratingBullet, Team, TeamWrap};
 use crate::physics::PhysicsComponent;
 use crate::player::PlayerControls;
 use crate::prelude::*;
@@ -140,6 +140,7 @@ impl<'a> System<'a> for RunBossAI {
                                         ..Default::default()
                                     })
                                     .with(TeamWrap { team: Team::Enemy })
+                                    .with(PenetratingBullet)
                                     .build();
                                 let position = transform.position
                                     + Vector::from_angle(90.0 + angle2).with_len(70.0);
@@ -148,20 +149,53 @@ impl<'a> System<'a> for RunBossAI {
                                 lazy_update
                                     .create_entity(&entities)
                                     .with_bullet_prefab()
-                                    .with(Transform {
-                                        position: dbg!(position),
-                                    })
+                                    .with(Transform { position })
                                     .with(PhysicsComponent {
                                         velocity,
                                         max_speed: speed,
                                         ..Default::default()
                                     })
                                     .with(TeamWrap { team: Team::Enemy })
+                                    .with(PenetratingBullet)
                                     .build();
                             }
                         }
                     }
-                    BossAttack::Sideswipe => {}
+                    BossAttack::Sideswipe => {
+                        let speed = 100.0;
+                        for line in 0..6 {
+                            let y = 100.0 * line as f32;
+                            for bullet in 0..6 {
+                                let position = Vector::new(-500.0 + 20.0 * bullet as f32, y);
+                                lazy_update
+                                    .create_entity(&entities)
+                                    .with_bullet_prefab()
+                                    .with(Transform { position })
+                                    .with(PhysicsComponent {
+                                        velocity: Vector::new(speed, 0.0),
+                                        max_speed: speed,
+                                        ..Default::default()
+                                    })
+                                    .with(TeamWrap { team: Team::Enemy })
+                                    .with(PenetratingBullet)
+                                    .build();
+                                let y = y + 50.0;
+                                let position = Vector::new(500.0 - 20.0 * bullet as f32, y);
+                                lazy_update
+                                    .create_entity(&entities)
+                                    .with_bullet_prefab()
+                                    .with(Transform { position })
+                                    .with(PhysicsComponent {
+                                        velocity: Vector::new(-speed, 0.0),
+                                        max_speed: speed,
+                                        ..Default::default()
+                                    })
+                                    .with(TeamWrap { team: Team::Enemy })
+                                    .with(PenetratingBullet)
+                                    .build();
+                            }
+                        }
+                    }
                 }
                 boss.attack_cooldown.set(*sim_time, 5.0);
                 boss.current_attack = (boss.current_attack + 1) % boss.attacks.len();

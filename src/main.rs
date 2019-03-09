@@ -51,7 +51,9 @@ use enemy_ai::{ChodeDeath, RunBossAI, RunChodeAI};
 
 mod all_components {
     pub use crate::enemy_ai::{Boss, BossAttack, ChodeAI};
-    pub use crate::gameplay::{Combative, Destructable, Exit, LevelObject, Team, TeamWrap};
+    pub use crate::gameplay::{
+        Combative, Destructable, Exit, LevelObject, PenetratingBullet, Team, TeamWrap,
+    };
     pub use crate::physics::{Bullet, CollidingWithWall, HitBox, PhysicsComponent, Transform};
     pub use crate::player::PlayerControls;
     pub use crate::render::RenderComponent;
@@ -208,6 +210,7 @@ impl State for GameState {
         world.register::<ChodeAI>();
         world.register::<TeamWrap>();
         world.register::<Boss>();
+        world.register::<PenetratingBullet>();
 
         let player = world
             .create_entity()
