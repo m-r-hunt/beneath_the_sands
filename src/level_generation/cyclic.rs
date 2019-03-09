@@ -175,6 +175,8 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
             room.1 * 20 + 5,
             if rng.gen_range(0.0, 1.0) > 0.8 {
                 EnemyType::Shotgunner
+            } else if rng.gen_range(0.0, 1.0) > 0.6 {
+                EnemyType::Spinner
             } else {
                 EnemyType::Chode
             },
@@ -187,6 +189,8 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
             room.1 * 20 + 5,
             if rng.gen_range(0.0, 1.0) > 0.8 {
                 EnemyType::Shotgunner
+            } else if rng.gen_range(0.0, 1.0) > 0.6 {
+                EnemyType::Spinner
             } else {
                 EnemyType::Chode
             },

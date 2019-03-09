@@ -121,6 +121,7 @@ impl<'a> System<'a> for WorldMapScreen {
                     match cp.2 {
                         EnemyType::Chode => ent = ent.with_chode_prefab(),
                         EnemyType::Shotgunner => ent = ent.with_shotgunner_prefab(),
+                        EnemyType::Spinner => ent = ent.with_spinner_prefab(),
                     }
                     ent.with(Transform {
                         position: Vector::new(

@@ -1,0 +1,16 @@
+Prefab(
+    name: "spinner",
+    components: [
+	(name: "RenderComponent", properties: [
+            (name: "radius", value: "12.0"),
+            (name: "colour", value: "Color::ORANGE"),
+        ]),
+	(name: "HitBox", properties: [(name: "radius", value: "12.0")]),
+	(name: "SpinnerAI"),
+	(name: "PhysicsComponent", properties: [(name: "max_speed", value: "50.0")]),
+	(name: "Combative", properties: [(name: "max_hp", value: "1")]),
+	(name: "LevelObject"),
+	(name: "TeamWrap", properties: [(name: "team", value: "Team::Enemy")]),
+	(name: "Asleep"),
+    ],
+)

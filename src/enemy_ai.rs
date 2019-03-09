@@ -9,6 +9,8 @@ const CHODE_ACCELERATION: f32 = 300.0;
 const CHODE_FIRE_COOLDOWN: f32 = 1.0;
 const SHOTGUNNER_ACCELERATION: f32 = 200.0;
 const SHOTGUNNER_FIRE_COOLDOWN: f32 = 2.0;
+const SPINNER_ACCELERATION: f32 = 300.0;
+const SPINNER_FIRE_COOLDOWN: f32 = 1.0;
 
 #[derive(Default)]
 pub struct ChodeAI {
@@ -28,6 +30,15 @@ impl Component for ShotgunnerAI {
     type Storage = HashMapStorage<Self>;
 }
 
+#[derive(Default)]
+pub struct SpinnerAI {
+    pub fire_cooldown: Timer,
+}
+
+impl Component for SpinnerAI {
+    type Storage = HashMapStorage<Self>;
+}
+
 pub struct ChodeDeath;
 
 impl<'a> System<'a> for ChodeDeath {
@@ -36,12 +47,19 @@ impl<'a> System<'a> for ChodeDeath {
         Read<'a, EventQueue>,
         ReadStorage<'a, ChodeAI>,
         ReadStorage<'a, ShotgunnerAI>,
+        ReadStorage<'a, SpinnerAI>,
     );
 
-    fn run(&mut self, (entities, event_queue, chode_ais, shotgunner_ais): Self::SystemData) {
+    fn run(
+        &mut self,
+        (entities, event_queue, chode_ais, shotgunner_ais, spinner_ais): Self::SystemData,
+    ) {
         for event in event_queue.iter() {
             if let Event::EntityKilled(ent) = event {
-                if chode_ais.get(*ent).is_some() || shotgunner_ais.get(*ent).is_some() {
+                if chode_ais.get(*ent).is_some()
+                    || shotgunner_ais.get(*ent).is_some()
+                    || spinner_ais.get(*ent).is_some()
+                {
                     entities.delete(*ent).unwrap();
                 }
             }
@@ -214,6 +232,73 @@ impl<'a> System<'a> for RunShotgunnerAI {
                 shotgunner
                     .fire_cooldown
                     .set(*sim_time, SHOTGUNNER_FIRE_COOLDOWN);
+            }
+        }
+    }
+}
+
+pub struct RunSpinnerAI;
+
+impl<'a> System<'a> for RunSpinnerAI {
+    type SystemData = (
+        WriteStorage<'a, SpinnerAI>,
+        WriteStorage<'a, PhysicsComponent>,
+        ReadStorage<'a, PlayerControls>,
+        ReadStorage<'a, Transform>,
+        ReadStorage<'a, Asleep>,
+        Read<'a, SimTime>,
+        Entities<'a>,
+        Read<'a, LazyUpdate>,
+    );
+
+    fn run(
+        &mut self,
+        (
+            mut spinner_ais,
+            mut physics,
+            player_controls,
+            transforms,
+            asleeps,
+            sim_time,
+            entities,
+            lazy_update,
+        ): Self::SystemData,
+    ) {
+        let mut player_pos = Vector::new(0.0, 0.0);
+        for (_, player_transform) in (&player_controls, &transforms).join() {
+            player_pos = player_transform.position;
+        }
+
+        for (spinner, transform, physics, _) in
+            (&mut spinner_ais, &transforms, &mut physics, !&asleeps).join()
+        {
+            let target_point =
+                player_pos + (transform.position - player_pos).with_len(TARGET_DISTANCE);
+            let dir = target_point - transform.position;
+            if dir.len2() >= std::f32::EPSILON {
+                physics.acceleration = dir.with_len(SPINNER_ACCELERATION);
+            }
+            physics.acceleration +=
+                Vector::from_angle((transform.position - player_pos).angle() + 90.0)
+                    .with_len(SPINNER_ACCELERATION);
+            physics.acceleration = physics.acceleration.with_len(SPINNER_ACCELERATION);
+
+            if spinner.fire_cooldown.expired(*sim_time) {
+                let bullet_speed = 400.0;
+                let velocity = (player_pos - transform.position).with_len(bullet_speed);
+                let position = transform.position + velocity.with_len(30.0);
+                lazy_update
+                    .create_entity(&entities)
+                    .with_bullet_prefab()
+                    .with(Transform { position })
+                    .with(PhysicsComponent {
+                        velocity,
+                        max_speed: bullet_speed,
+                        ..Default::default()
+                    })
+                    .with(TeamWrap { team: Team::Enemy })
+                    .build();
+                spinner.fire_cooldown.set(*sim_time, SPINNER_FIRE_COOLDOWN);
             }
         }
     }

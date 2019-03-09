@@ -36,6 +36,7 @@ pub fn generate_level(style: LevelStyle) -> GeneratedLevel {
 pub enum EnemyType {
     Chode,
     Shotgunner,
+    Spinner,
 }
 
 pub struct GeneratedLevel {

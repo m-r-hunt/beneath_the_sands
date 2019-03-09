@@ -49,10 +49,10 @@ mod world_map;
 use world_map::{CurrentDungeon, Dungeon, WorldMapScreen};
 
 mod enemy_ai;
-use enemy_ai::{ChodeDeath, RunBossAI, RunChodeAI, RunShotgunnerAI};
+use enemy_ai::{ChodeDeath, RunBossAI, RunChodeAI, RunShotgunnerAI, RunSpinnerAI};
 
 mod all_components {
-    pub use crate::enemy_ai::{Boss, BossAttack, ChodeAI, ShotgunnerAI};
+    pub use crate::enemy_ai::{Boss, BossAttack, ChodeAI, ShotgunnerAI, SpinnerAI};
     pub use crate::gameplay::{
         Asleep, Combative, Destructable, Exit, LevelObject, PenetratingBullet, Team, TeamWrap,
     };
@@ -246,6 +246,7 @@ fn create_world() -> World {
     world.register::<Asleep>();
     world.register::<Camera>();
     world.register::<ShotgunnerAI>();
+    world.register::<SpinnerAI>();
 
     let player = world
         .create_entity()
@@ -474,6 +475,7 @@ fn make_dispatcher<'a, 'b>() -> Dispatcher<'a, 'b> {
         .with(PlayerControlSystem, "player_control", &["camera_system"])
         .with(RunChodeAI, "run_chode_ai", &[])
         .with(RunShotgunnerAI, "run_shotgunner_ai", &[])
+        .with(RunSpinnerAI, "run_spinner_ai", &[])
         .with(RunBossAI, "run_boss_ai", &[])
         .with(
             PhysicsSystem,
@@ -483,6 +485,7 @@ fn make_dispatcher<'a, 'b>() -> Dispatcher<'a, 'b> {
                 "run_chode_ai",
                 "run_boss_ai",
                 "run_shotgunner_ai",
+                "run_spinner_ai",
             ],
         )
         .with(CollisionDetection, "collision_detection", &["physics"])
