@@ -1,4 +1,5 @@
-use crate::gameplay::{Boss, Combative};
+use crate::enemy_ai::Boss;
+use crate::gameplay::Combative;
 use crate::physics::{TileMap, TILE_SIZE};
 use crate::player::PlayerControls;
 use crate::prelude::*;

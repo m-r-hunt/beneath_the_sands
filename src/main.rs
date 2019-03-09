@@ -47,11 +47,11 @@ mod world_map;
 use world_map::{CurrentDungeon, Dungeon, WorldMapScreen};
 
 mod enemy_ai;
-use enemy_ai::{ChodeDeath, RunChodeAI};
+use enemy_ai::{ChodeDeath, RunBossAI, RunChodeAI};
 
 mod all_components {
-    pub use crate::enemy_ai::ChodeAI;
-    pub use crate::gameplay::{Boss, Combative, Destructable, Exit, LevelObject, Team, TeamWrap};
+    pub use crate::enemy_ai::{Boss, BossAttack, ChodeAI};
+    pub use crate::gameplay::{Combative, Destructable, Exit, LevelObject, Team, TeamWrap};
     pub use crate::physics::{Bullet, CollidingWithWall, HitBox, PhysicsComponent, Transform};
     pub use crate::player::PlayerControls;
     pub use crate::render::RenderComponent;
@@ -407,10 +407,11 @@ fn make_dispatcher<'a, 'b>() -> Dispatcher<'a, 'b> {
     DispatcherBuilder::new()
         .with(PlayerControlSystem, "player_control", &[])
         .with(RunChodeAI, "run_chode_ai", &[])
+        .with(RunBossAI, "run_boss_ai", &[])
         .with(
             PhysicsSystem,
             "physics",
-            &["player_control", "run_chode_ai"],
+            &["player_control", "run_chode_ai", "run_boss_ai"],
         )
         .with(CollisionDetection, "collision_detection", &["physics"])
         .with(

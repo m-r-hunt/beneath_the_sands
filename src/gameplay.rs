@@ -1,3 +1,4 @@
+use crate::enemy_ai::{Boss, BossAttack};
 use crate::level_generation::{self, BOSS_ARENA_SIZE};
 use crate::physics::{hitbox_overlap, Bullet, CollidingWithWall, HitBox, TileMap, TILE_SIZE};
 use crate::player::PlayerControls;
@@ -105,6 +106,7 @@ impl<'a> System<'a> for ExitSystem {
         Entities<'a>,
         Read<'a, LazyUpdate>,
         Write<'a, TileMap>,
+        Read<'a, SimTime>,
     );
 
     fn run(
@@ -121,6 +123,7 @@ impl<'a> System<'a> for ExitSystem {
             entities,
             lazy_update,
             mut tile_map,
+            sim_time,
         ): Self::SystemData,
     ) {
         let mut exit = false;
@@ -151,10 +154,14 @@ impl<'a> System<'a> for ExitSystem {
                         .with(Transform {
                             position: Vector::new(0.0, -(BOSS_ARENA_SIZE as f32 - 2.0) * TILE_SIZE),
                         })
+                        .with(Boss {
+                            attacks: vec![BossAttack::Lines, BossAttack::Sideswipe],
+                            attack_cooldown: Timer::new_set(*sim_time, 5.0),
+                            ..Default::default()
+                        })
                         .build();
                     for (player_transform, _) in (&mut transforms, &players).join() {
-                        player_transform.position =
-                            Vector::new(0.0, (BOSS_ARENA_SIZE as f32 - 1.0) * TILE_SIZE);
+                        player_transform.position = Vector::new(0.0, 100.0);
                     }
                     *tile_map = level_generation::make_boss_arena();
                 }
@@ -261,13 +268,6 @@ impl<'a> System<'a> for ChoiceSystem {
             }
         }
     }
-}
-
-#[derive(Default)]
-pub struct Boss;
-
-impl Component for Boss {
-    type Storage = HashMapStorage<Self>;
 }
 
 pub struct BossDeathSystem;

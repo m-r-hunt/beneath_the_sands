@@ -87,3 +87,85 @@ impl<'a> System<'a> for RunChodeAI {
         }
     }
 }
+
+#[derive(Default)]
+pub struct Boss {
+    pub attacks: Vec<BossAttack>,
+    pub current_attack: usize,
+    pub attack_cooldown: Timer,
+}
+
+impl Component for Boss {
+    type Storage = HashMapStorage<Self>;
+}
+
+pub enum BossAttack {
+    Lines,
+    Sideswipe,
+}
+
+pub struct RunBossAI;
+
+impl<'a> System<'a> for RunBossAI {
+    type SystemData = (
+        ReadStorage<'a, Transform>,
+        WriteStorage<'a, Boss>,
+        Entities<'a>,
+        Read<'a, LazyUpdate>,
+        Read<'a, SimTime>,
+    );
+
+    fn run(&mut self, (transforms, mut bosses, entities, lazy_update, sim_time): Self::SystemData) {
+        for (transform, boss) in (&transforms, &mut bosses).join() {
+            if boss.attack_cooldown.expired(*sim_time) {
+                match boss.attacks[boss.current_attack] {
+                    BossAttack::Lines => {
+                        for line in 0..3 {
+                            let angle1 = line as f32 * 10.0;
+                            let angle2 = -angle1;
+                            for bullet in 0..10 {
+                                let position = transform.position
+                                    + Vector::from_angle(90.0 + angle1).with_len(70.0);
+                                let speed = 100.0 * (bullet as f32 + 1.0);
+                                let velocity = Vector::from_angle(90.0 + angle1).with_len(speed);
+                                lazy_update
+                                    .create_entity(&entities)
+                                    .with_bullet_prefab()
+                                    .with(Transform {
+                                        position: dbg!(position),
+                                    })
+                                    .with(PhysicsComponent {
+                                        velocity,
+                                        max_speed: speed,
+                                        ..Default::default()
+                                    })
+                                    .with(TeamWrap { team: Team::Enemy })
+                                    .build();
+                                let position = transform.position
+                                    + Vector::from_angle(90.0 + angle2).with_len(70.0);
+                                let speed = 100.0 * (bullet as f32 + 1.0);
+                                let velocity = Vector::from_angle(90.0 + angle2).with_len(speed);
+                                lazy_update
+                                    .create_entity(&entities)
+                                    .with_bullet_prefab()
+                                    .with(Transform {
+                                        position: dbg!(position),
+                                    })
+                                    .with(PhysicsComponent {
+                                        velocity,
+                                        max_speed: speed,
+                                        ..Default::default()
+                                    })
+                                    .with(TeamWrap { team: Team::Enemy })
+                                    .build();
+                            }
+                        }
+                    }
+                    BossAttack::Sideswipe => {}
+                }
+                boss.attack_cooldown.set(*sim_time, 5.0);
+                boss.current_attack = (boss.current_attack + 1) % boss.attacks.len();
+            }
+        }
+    }
+}

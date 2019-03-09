@@ -10,6 +10,5 @@ Prefab(
 	(name: "TeamWrap", properties: [(name: "team", value: "Team::Enemy")]),
 	(name: "Combative", properties: [(name: "max_hp", value: "10")]),
 	(name: "LevelObject"),
-	(name: "Boss"),
     ],
 )
