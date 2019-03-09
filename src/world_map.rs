@@ -2,7 +2,7 @@ use crate::level_generation::{generate_level, LevelStyle};
 use crate::physics::TileMap;
 use crate::player::PlayerControls;
 use crate::prelude::*;
-use crate::{Input, PlayerProgression, ScreenSize, UIState, TILE_SIZE};
+use crate::{Camera, Input, PlayerProgression, ScreenSize, UIState, TILE_SIZE};
 
 pub const RANGE1: f32 = 150.0;
 pub const RANGE2: f32 = 300.0;
@@ -50,6 +50,7 @@ impl<'a> System<'a> for WorldMapScreen {
         Entities<'a>,
         Write<'a, CurrentDungeon>,
         Read<'a, PlayerProgression>,
+        WriteStorage<'a, Camera>,
     );
 
     fn run(
@@ -61,11 +62,12 @@ impl<'a> System<'a> for WorldMapScreen {
             input,
             mut tile_map,
             players,
-            mut movements,
+            mut transforms,
             lazy_update,
             entities,
             mut current_dungeon,
             progression,
+            mut cameras,
         ): Self::SystemData,
     ) {
         let offset = screen_size.size / 2.0;
@@ -79,9 +81,11 @@ impl<'a> System<'a> for WorldMapScreen {
                 *ui_state = UIState::Playing;
                 let level = generate_level(d.style);
                 *tile_map = level.tile_map;
-                for (_, player_movement) in (&players, &mut movements).join() {
+                let mut player_start_position = Vector::new(-1.0, -1.0);
+                for (_, player_movement) in (&players, &mut transforms).join() {
                     player_movement.position = Vector::from(level.start_position) * TILE_SIZE
                         + Vector::new(TILE_SIZE / 2.0, TILE_SIZE / 2.0);
+                    player_start_position = player_movement.position;
                 }
                 lazy_update
                     .create_entity(&entities)
@@ -106,6 +110,12 @@ impl<'a> System<'a> for WorldMapScreen {
                         .build();
                 }
                 current_dungeon.entity = Some(e);
+                for (camera, transform) in (&mut cameras, &mut transforms).join() {
+                    for (ent, _) in (&entities, &players).join() {
+                        camera.follow = ent;
+                    }
+                    transform.position = player_start_position - screen_size.size / 2.0;
+                }
             }
         }
     }
