@@ -2,8 +2,8 @@ use crate::level_generation::LevelStyle;
 use crate::prelude::*;
 use crate::world_map::{Dungeon, Item, Reward, RANGE1, RANGE2};
 
-const L1_DUNGEONS: usize = 3;
-const L2_DUNGEONS: usize = 3;
+const L1_DUNGEONS: usize = 2;
+const L2_DUNGEONS: usize = 2;
 
 pub fn generate_dungeons(world: &mut World) {
     let mut rng = rand::thread_rng();
@@ -12,7 +12,7 @@ pub fn generate_dungeons(world: &mut World) {
         out.push(Dungeon {
             position: Vector::from_angle(rng.gen_range(0.0, 360.0))
                 .with_len(rng.gen_range(50.0, RANGE1)),
-            reward: Reward::Choice(Item::AttackSpeed, Item::MaxHealth),
+            reward: Reward::Choice(Item::TripleShot, Item::ExtraDamage),
             completed: false,
             style: if rng.gen_range(0.0, 1.0) > 0.5 {
                 LevelStyle::Cyclic

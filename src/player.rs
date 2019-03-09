@@ -1,5 +1,5 @@
 use crate::gameplay::{Team, TeamWrap};
-use crate::physics::{check_collision, HitBox, PhysicsComponent, TileMap};
+use crate::physics::{check_collision, Bullet, HitBox, PhysicsComponent, TileMap};
 use crate::prelude::*;
 use crate::{Event, EventQueue, UIState};
 use crate::{Input, SimTime, Timer};
@@ -13,6 +13,8 @@ pub struct PlayerControls {
     pub fire_rate: f32,
     pub fire_cooldown: Timer,
     pub dodge_cooldown: Timer,
+    pub triple_shot: bool,
+    pub bullet_damage: i32,
 }
 
 impl Component for PlayerControls {
@@ -90,6 +92,10 @@ impl<'a> System<'a> for PlayerControlSystem {
                 lazy_update
                     .create_entity(&entities)
                     .with_bullet_prefab()
+                    .with(Bullet {
+                        radius: 5.0,
+                        damage: player_controls.bullet_damage,
+                    })
                     .with(Transform { position })
                     .with(PhysicsComponent {
                         velocity,
@@ -98,6 +104,47 @@ impl<'a> System<'a> for PlayerControlSystem {
                     })
                     .with(TeamWrap { team: Team::Player })
                     .build();
+                if player_controls.triple_shot {
+                    let velocity =
+                        Vector::from_angle((input.mouse_pos - transform.position).angle() + 20.0)
+                            .with_len(bullet_speed);
+                    let position = transform.position + velocity.with_len(30.0);
+                    lazy_update
+                        .create_entity(&entities)
+                        .with_bullet_prefab()
+                        .with(Bullet {
+                            radius: 5.0,
+                            damage: player_controls.bullet_damage,
+                        })
+                        .with(Transform { position })
+                        .with(PhysicsComponent {
+                            velocity,
+                            max_speed: bullet_speed,
+                            ..Default::default()
+                        })
+                        .with(TeamWrap { team: Team::Player })
+                        .build();
+
+                    let velocity =
+                        Vector::from_angle((input.mouse_pos - transform.position).angle() - 20.0)
+                            .with_len(bullet_speed);
+                    let position = transform.position + velocity.with_len(30.0);
+                    lazy_update
+                        .create_entity(&entities)
+                        .with_bullet_prefab()
+                        .with(Bullet {
+                            radius: 5.0,
+                            damage: player_controls.bullet_damage,
+                        })
+                        .with(Transform { position })
+                        .with(PhysicsComponent {
+                            velocity,
+                            max_speed: bullet_speed,
+                            ..Default::default()
+                        })
+                        .with(TeamWrap { team: Team::Player })
+                        .build();
+                }
                 player_controls
                     .fire_cooldown
                     .set(*sim_time, player_controls.fire_rate);

@@ -38,6 +38,7 @@ impl Component for Transform {
 #[derive(Debug, Default)]
 pub struct Bullet {
     pub radius: f32,
+    pub damage: i32,
 }
 
 impl Component for Bullet {

@@ -9,8 +9,27 @@ pub const RANGE2: f32 = 300.0;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum Item {
-    AttackSpeed,
-    MaxHealth,
+    AttackSpeed,         // Done
+    MaxHealth,           // Done
+    TripleShot,          // Needs work in player probably a flag
+    ExtraDamage,         // Extra damage needs work in combative and a var in player
+    Penetrating,         // Needs work in combative - probably a bullet flag
+    ReduceDodgeCooldown, // Needs work in player var
+    SpeedIncrease,       // Needs work in player var
+    Backfire,            // Needs work in player probably a flag
+}
+
+pub fn all_items() -> Vec<Item> {
+    vec![
+        Item::AttackSpeed,
+        Item::MaxHealth,
+        Item::TripleShot,
+        Item::ExtraDamage,
+        Item::Penetrating,
+        Item::ReduceDodgeCooldown,
+        Item::SpeedIncrease,
+        Item::Backfire,
+    ]
 }
 
 #[derive(Copy, Clone, Eq, PartialEq)]

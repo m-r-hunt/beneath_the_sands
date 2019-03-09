@@ -213,20 +213,25 @@ impl<'a> System<'a> for CombativeCollisionHandler {
         Write<'a, EventQueue>,
         WriteStorage<'a, Combative>,
         Read<'a, SimTime>,
+        ReadStorage<'a, Bullet>,
     );
 
-    fn run(&mut self, (entities, mut event_queue, mut combatives, sim_time): Self::SystemData) {
+    fn run(
+        &mut self,
+        (entities, mut event_queue, mut combatives, sim_time, bullets): Self::SystemData,
+    ) {
         let mut new_events = Vec::new();
         for event in event_queue.iter() {
-            if let Event::Collision(entity, bullet) = event {
+            if let Event::Collision(entity, bullet_ent) = event {
                 if combatives.get(*entity).is_some() {
+                    let bullet = bullets.get(*bullet_ent).unwrap();
                     let c = combatives.get_mut(*entity).unwrap();
                     if c.invincibility_cooldown.expired(*sim_time) {
-                        c.damage += 1;
+                        c.damage += bullet.damage;
                         if c.damage >= c.max_hp {
                             new_events.push(Event::EntityKilled(*entity));
                         }
-                        entities.delete(*bullet).unwrap();
+                        entities.delete(*bullet_ent).unwrap();
                         c.invincibility_cooldown.set(*sim_time, INVINCIBILITY_TIME);
                     }
                 }
@@ -254,6 +259,17 @@ fn apply_upgrade<'a>(
                 c.max_hp += 1;
             }
         }
+        Item::TripleShot => {
+            for p in (players).join() {
+                p.triple_shot = true;
+            }
+        }
+        Item::ExtraDamage => {
+            for p in (players).join() {
+                p.bullet_damage += 1;
+            }
+        }
+        _ => unimplemented!(),
     }
 }
 
