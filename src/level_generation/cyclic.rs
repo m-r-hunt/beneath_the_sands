@@ -182,67 +182,47 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
             let steps = (dx * 20).abs() - 10;
             for step in 0..steps {
                 let offset = if dx == 1 { 10 } else { -1 };
-                tile_map.tiles.insert(
-                    (
-                        path[i].0 * 20 + offset + step * dx,
-                        path[i].1 * 20 + 4 + step * dy,
-                    ),
-                    WALL,
-                );
-                tile_map.tiles.insert(
-                    (
-                        path[i].0 * 20 + offset + step * dx,
-                        path[i].1 * 20 + 5 + step * dy,
-                    ),
-                    FLOOR,
-                );
-                tile_map.tiles.insert(
-                    (
-                        path[i].0 * 20 + offset + step * dx,
-                        path[i].1 * 20 + 6 + step * dy,
-                    ),
-                    FLOOR,
-                );
-                tile_map.tiles.insert(
-                    (
-                        path[i].0 * 20 + offset + step * dx,
-                        path[i].1 * 20 + 7 + step * dy,
-                    ),
-                    WALL,
-                );
+                for n in 1..9 {
+                    tile_map.tiles.insert(
+                        (
+                            path[i].0 * 20 + offset + step * dx,
+                            path[i].1 * 20 + n + step * dy,
+                        ),
+                        WALL,
+                    );
+                }
+                for n in 2..8 {
+                    tile_map.tiles.insert(
+                        (
+                            path[i].0 * 20 + offset + step * dx,
+                            path[i].1 * 20 + n + step * dy,
+                        ),
+                        FLOOR,
+                    );
+                }
             }
         } else {
             let steps = (dy * 20).abs() - 10;
             for step in 0..steps {
                 let offset = if dy == 1 { 10 } else { -1 };
-                tile_map.tiles.insert(
-                    (
-                        path[i].0 * 20 + 4 + step * dx,
-                        path[i].1 * 20 + offset + step * dy,
-                    ),
-                    WALL,
-                );
-                tile_map.tiles.insert(
-                    (
-                        path[i].0 * 20 + 5 + step * dx,
-                        path[i].1 * 20 + offset + step * dy,
-                    ),
-                    FLOOR,
-                );
-                tile_map.tiles.insert(
-                    (
-                        path[i].0 * 20 + 6 + step * dx,
-                        path[i].1 * 20 + offset + step * dy,
-                    ),
-                    FLOOR,
-                );
-                tile_map.tiles.insert(
-                    (
-                        path[i].0 * 20 + 7 + step * dx,
-                        path[i].1 * 20 + offset + step * dy,
-                    ),
-                    WALL,
-                );
+                for n in 1..9 {
+                    tile_map.tiles.insert(
+                        (
+                            path[i].0 * 20 + n + step * dx,
+                            path[i].1 * 20 + offset + step * dy,
+                        ),
+                        WALL,
+                    );
+                }
+                for n in 2..8 {
+                    tile_map.tiles.insert(
+                        (
+                            path[i].0 * 20 + n + step * dx,
+                            path[i].1 * 20 + offset + step * dy,
+                        ),
+                        FLOOR,
+                    );
+                }
             }
         }
     }
@@ -253,67 +233,47 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
             let steps = (dx * 20).abs() - 10;
             for step in 0..steps {
                 let offset = if dx == 1 { 10 } else { -1 };
-                tile_map.tiles.insert(
-                    (
-                        side_path[i].0 * 20 + offset + step * dx,
-                        side_path[i].1 * 20 + 4 + step * dy,
-                    ),
-                    WALL,
-                );
-                tile_map.tiles.insert(
-                    (
-                        side_path[i].0 * 20 + offset + step * dx,
-                        side_path[i].1 * 20 + 5 + step * dy,
-                    ),
-                    FLOOR,
-                );
-                tile_map.tiles.insert(
-                    (
-                        side_path[i].0 * 20 + offset + step * dx,
-                        side_path[i].1 * 20 + 6 + step * dy,
-                    ),
-                    FLOOR,
-                );
-                tile_map.tiles.insert(
-                    (
-                        side_path[i].0 * 20 + offset + step * dx,
-                        side_path[i].1 * 20 + 7 + step * dy,
-                    ),
-                    WALL,
-                );
+                for n in 1..9 {
+                    tile_map.tiles.insert(
+                        (
+                            path[i].0 * 20 + offset + step * dx,
+                            path[i].1 * 20 + n + step * dy,
+                        ),
+                        WALL,
+                    );
+                }
+                for n in 2..8 {
+                    tile_map.tiles.insert(
+                        (
+                            path[i].0 * 20 + offset + step * dx,
+                            path[i].1 * 20 + n + step * dy,
+                        ),
+                        FLOOR,
+                    );
+                }
             }
         } else {
             let steps = (dy * 20).abs() - 10;
             for step in 0..steps {
                 let offset = if dy == 1 { 10 } else { -1 };
-                tile_map.tiles.insert(
-                    (
-                        side_path[i].0 * 20 + 4 + step * dx,
-                        side_path[i].1 * 20 + offset + step * dy,
-                    ),
-                    WALL,
-                );
-                tile_map.tiles.insert(
-                    (
-                        side_path[i].0 * 20 + 5 + step * dx,
-                        side_path[i].1 * 20 + offset + step * dy,
-                    ),
-                    FLOOR,
-                );
-                tile_map.tiles.insert(
-                    (
-                        side_path[i].0 * 20 + 6 + step * dx,
-                        side_path[i].1 * 20 + offset + step * dy,
-                    ),
-                    FLOOR,
-                );
-                tile_map.tiles.insert(
-                    (
-                        side_path[i].0 * 20 + 7 + step * dx,
-                        side_path[i].1 * 20 + offset + step * dy,
-                    ),
-                    WALL,
-                );
+                for n in 1..9 {
+                    tile_map.tiles.insert(
+                        (
+                            path[i].0 * 20 + n + step * dx,
+                            path[i].1 * 20 + offset + step * dy,
+                        ),
+                        WALL,
+                    );
+                }
+                for n in 2..8 {
+                    tile_map.tiles.insert(
+                        (
+                            path[i].0 * 20 + n + step * dx,
+                            path[i].1 * 20 + offset + step * dy,
+                        ),
+                        FLOOR,
+                    );
+                }
             }
         }
     }
