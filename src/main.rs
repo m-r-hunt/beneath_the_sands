@@ -167,7 +167,6 @@ struct GameState {
     title_image: Asset<Image>,
 }
 
-
 pub struct Camera {
     follow: Entity,
 }
@@ -182,26 +181,96 @@ const CAMERA_ACCELERATION: f32 = 1000.0;
 const CAMERA_DEAD_ZONE: f32 = 50.0;
 
 impl<'a> System<'a> for CameraSystem {
-    type SystemData = (ReadStorage<'a, Camera>, WriteStorage<'a, PhysicsComponent>, ReadStorage<'a, Transform>, Write<'a, Input>, Read<'a, ScreenSize>);
+    type SystemData = (
+        ReadStorage<'a, Camera>,
+        WriteStorage<'a, PhysicsComponent>,
+        ReadStorage<'a, Transform>,
+        Write<'a, Input>,
+        Read<'a, ScreenSize>,
+    );
 
-    fn run(&mut self, (cameras, mut physics, transforms, mut input, screen_size): Self::SystemData) {
-        for (camera_transform, camera_physics, camera) in (&transforms, &mut physics, &cameras).join() {
+    fn run(
+        &mut self,
+        (cameras, mut physics, transforms, mut input, screen_size): Self::SystemData,
+    ) {
+        for (camera_transform, camera_physics, camera) in
+            (&transforms, &mut physics, &cameras).join()
+        {
             input.mouse_pos = input.raw_mouse_pos + camera_transform.position;
 
             let transform = transforms.get(camera.follow).unwrap();
             let target_point = transform.position - screen_size.size / 2.0;
 
-            if (target_point - camera_transform.position).len2() <= CAMERA_DEAD_ZONE * CAMERA_DEAD_ZONE {
+            if (target_point - camera_transform.position).len2()
+                <= CAMERA_DEAD_ZONE * CAMERA_DEAD_ZONE
+            {
                 camera_physics.acceleration = Vector::new(0.0, 0.0);
                 camera_physics.velocity *= 0.6;
                 if camera_physics.velocity.len2() <= 100.0 {
                     camera_physics.velocity = Vector::new(0.0, 0.0);
                 }
             } else {
-                camera_physics.acceleration = (target_point - camera_transform.position).with_len(CAMERA_ACCELERATION);
+                camera_physics.acceleration =
+                    (target_point - camera_transform.position).with_len(CAMERA_ACCELERATION);
             }
         }
     }
+}
+
+fn create_world() -> World {
+    let level = level_generation::generate_level(LevelStyle::Cyclic);
+    let mut world = World::new();
+
+    world.register::<Transform>();
+    world.register::<PhysicsComponent>();
+    world.register::<PlayerControls>();
+    world.register::<RenderComponent>();
+    world.register::<HitBox>();
+    world.register::<Bullet>();
+    world.register::<CollidingWithWall>();
+    world.register::<Dungeon>();
+    world.register::<Exit>();
+    world.register::<Destructable>();
+    world.register::<LevelObject>();
+    world.register::<Combative>();
+    world.register::<ChodeAI>();
+    world.register::<TeamWrap>();
+    world.register::<Boss>();
+    world.register::<PenetratingBullet>();
+    world.register::<Asleep>();
+    world.register::<Camera>();
+
+    let player = world
+        .create_entity()
+        .with_player_prefab()
+        .with(Transform {
+            position: Vector::from(level.start_position) * TILE_SIZE
+                + Vector::new(TILE_SIZE / 2.0, TILE_SIZE / 2.0),
+        })
+        .build();
+    world
+        .create_entity()
+        .with_target_prefab()
+        .with(Transform {
+            position: Vector::new(SCREEN_WIDTH / 2.0, 100.0),
+        })
+        .build();
+    world
+        .create_entity()
+        .with_camera_prefab()
+        .with(Camera { follow: player })
+        .build();
+    world.add_resource::<Input>(Default::default());
+    world.add_resource::<SimTime>(Default::default());
+    world.add_resource::<EventQueue>(Default::default());
+    world.add_resource::<TileMap>(level.tile_map);
+    world.add_resource(UIState::Title);
+    world.add_resource::<ScreenSize>(Default::default());
+    world.add_resource::<PlayerProgression>(Default::default());
+    world.add_resource::<CurrentDungeon>(Default::default());
+
+    world_generation::generate_dungeons(&mut world);
+    world
 }
 
 #[derive(Default)]
@@ -212,58 +281,12 @@ pub struct ScreenSize {
 impl State for GameState {
     fn new() -> quicksilver::Result<Self> {
         let title_image = Asset::new(Image::load("title.png"));
-        let level = level_generation::generate_level(LevelStyle::Cyclic);
 
         let font =
             Font::from_slice(include_bytes!("fonts/fonts/OpenSans/OpenSans-Regular.ttf")).unwrap();
 
-        let mut world = World::new();
+        let world = create_world();
 
-        world.register::<Transform>();
-        world.register::<PhysicsComponent>();
-        world.register::<PlayerControls>();
-        world.register::<RenderComponent>();
-        world.register::<HitBox>();
-        world.register::<Bullet>();
-        world.register::<CollidingWithWall>();
-        world.register::<Dungeon>();
-        world.register::<Exit>();
-        world.register::<Destructable>();
-        world.register::<LevelObject>();
-        world.register::<Combative>();
-        world.register::<ChodeAI>();
-        world.register::<TeamWrap>();
-        world.register::<Boss>();
-        world.register::<PenetratingBullet>();
-        world.register::<Asleep>();
-        world.register::<Camera>();
-
-        let player = world
-            .create_entity()
-            .with_player_prefab()
-            .with(Transform {
-                position: Vector::from(level.start_position) * TILE_SIZE
-                    + Vector::new(TILE_SIZE / 2.0, TILE_SIZE / 2.0),
-            })
-            .build();
-        world
-            .create_entity()
-            .with_target_prefab()
-            .with(Transform {
-                position: Vector::new(SCREEN_WIDTH / 2.0, 100.0),
-            })
-            .build();
-        world.create_entity().with_camera_prefab().with(Camera{ follow: player}).build();
-        world.add_resource::<Input>(Default::default());
-        world.add_resource::<SimTime>(Default::default());
-        world.add_resource::<EventQueue>(Default::default());
-        world.add_resource::<TileMap>(level.tile_map);
-        world.add_resource(UIState::Title);
-        world.add_resource::<ScreenSize>(Default::default());
-        world.add_resource::<PlayerProgression>(Default::default());
-        world.add_resource::<CurrentDungeon>(Default::default());
-
-        world_generation::generate_dungeons(&mut world);
         Ok(GameState {
             world,
             dispatcher: make_dispatcher(),
@@ -321,6 +344,7 @@ impl State for GameState {
                 if window.keyboard()[Key::Space] == ButtonState::Pressed
                     || window.keyboard()[Key::Escape] == ButtonState::Pressed
                 {
+                    self.world = create_world();
                     self.world.add_resource(UIState::Title);
                 }
                 Ok(())
