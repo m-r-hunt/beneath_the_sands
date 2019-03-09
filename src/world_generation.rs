@@ -26,6 +26,7 @@ pub fn generate_dungeons(world: &mut World) {
             } else {
                 LevelStyle::CellularAutomata
             },
+            difficulty: 1,
         });
     }
     out.push(Dungeon {
@@ -38,6 +39,7 @@ pub fn generate_dungeons(world: &mut World) {
         } else {
             LevelStyle::CellularAutomata
         },
+        difficulty: 1,
     });
 
     for _ in 0..L2_DUNGEONS {
@@ -57,6 +59,7 @@ pub fn generate_dungeons(world: &mut World) {
             } else {
                 LevelStyle::CellularAutomata
             },
+            difficulty: 2,
         });
     }
     out.push(Dungeon {
@@ -69,6 +72,7 @@ pub fn generate_dungeons(world: &mut World) {
         } else {
             LevelStyle::CellularAutomata
         },
+        difficulty: 2,
     });
 
     for d in out {

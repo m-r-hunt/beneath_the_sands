@@ -1,0 +1,16 @@
+Prefab(
+    name: "hard_chode",
+    components: [
+	(name: "RenderComponent", properties: [
+            (name: "radius", value: "10.0"),
+            (name: "colour", value: "Color::RED"),
+        ]),
+	(name: "HitBox", properties: [(name: "radius", value: "10.0")]),
+	(name: "ChodeAI"),
+	(name: "PhysicsComponent", properties: [(name: "max_speed", value: "50.0")]),
+	(name: "Combative", properties: [(name: "max_hp", value: "2")]),
+	(name: "LevelObject"),
+	(name: "TeamWrap", properties: [(name: "team", value: "Team::Enemy")]),
+	(name: "Asleep"),
+    ],
+)

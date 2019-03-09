@@ -43,6 +43,7 @@ pub struct Dungeon {
     pub reward: Reward,
     pub completed: bool,
     pub style: LevelStyle,
+    pub difficulty: i32,
 }
 
 impl Component for Dungeon {
@@ -118,10 +119,18 @@ impl<'a> System<'a> for WorldMapScreen {
                     .build();
                 for cp in level.chode_positions {
                     let mut ent = lazy_update.create_entity(&entities);
-                    match cp.2 {
-                        EnemyType::Chode => ent = ent.with_chode_prefab(),
-                        EnemyType::Shotgunner => ent = ent.with_shotgunner_prefab(),
-                        EnemyType::Spinner => ent = ent.with_spinner_prefab(),
+                    if d.difficulty == 1 {
+                        match cp.2 {
+                            EnemyType::Chode => ent = ent.with_chode_prefab(),
+                            EnemyType::Shotgunner => ent = ent.with_shotgunner_prefab(),
+                            EnemyType::Spinner => ent = ent.with_spinner_prefab(),
+                        }
+                    } else {
+                        match cp.2 {
+                            EnemyType::Chode => ent = ent.with_hard_chode_prefab(),
+                            EnemyType::Shotgunner => ent = ent.with_hard_shotgunner_prefab(),
+                            EnemyType::Spinner => ent = ent.with_hard_spinner_prefab(),
+                        }
                     }
                     ent.with(Transform {
                         position: Vector::new(
