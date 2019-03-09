@@ -231,7 +231,9 @@ impl<'a> System<'a> for CombativeCollisionHandler {
                         if c.damage >= c.max_hp {
                             new_events.push(Event::EntityKilled(*entity));
                         }
-                        entities.delete(*bullet_ent).unwrap();
+                        if !bullet.penetrating {
+                            entities.delete(*bullet_ent).unwrap();
+                        }
                         c.invincibility_cooldown.set(*sim_time, INVINCIBILITY_TIME);
                     }
                 }
@@ -269,6 +271,17 @@ fn apply_upgrade<'a>(
                 p.bullet_damage += 1;
             }
         }
+        Item::Penetrating => {
+            for p in (players).join() {
+                p.penetrating = true;
+            }
+        }
+        Item::ReduceDodgeCooldown => {
+            for p in (players).join() {
+                p.dodge_cooldown_time = 0.9;
+            }
+        }
+
         _ => unimplemented!(),
     }
 }

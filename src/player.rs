@@ -6,7 +6,6 @@ use crate::{Input, SimTime, Timer};
 
 const PLAYER_ACCELERATION: f32 = 1000.0;
 const DODGE_DISTANCE: i32 = 45;
-const DODGE_COOLDOWN: f32 = 2.0;
 
 #[derive(Default)]
 pub struct PlayerControls {
@@ -15,6 +14,8 @@ pub struct PlayerControls {
     pub dodge_cooldown: Timer,
     pub triple_shot: bool,
     pub bullet_damage: i32,
+    pub penetrating: bool,
+    pub dodge_cooldown_time: f32,
 }
 
 impl Component for PlayerControls {
@@ -95,6 +96,7 @@ impl<'a> System<'a> for PlayerControlSystem {
                     .with(Bullet {
                         radius: 5.0,
                         damage: player_controls.bullet_damage,
+                        penetrating: player_controls.penetrating,
                     })
                     .with(Transform { position })
                     .with(PhysicsComponent {
@@ -115,6 +117,7 @@ impl<'a> System<'a> for PlayerControlSystem {
                         .with(Bullet {
                             radius: 5.0,
                             damage: player_controls.bullet_damage,
+                            penetrating: player_controls.penetrating,
                         })
                         .with(Transform { position })
                         .with(PhysicsComponent {
@@ -135,6 +138,7 @@ impl<'a> System<'a> for PlayerControlSystem {
                         .with(Bullet {
                             radius: 5.0,
                             damage: player_controls.bullet_damage,
+                            penetrating: player_controls.penetrating,
                         })
                         .with(Transform { position })
                         .with(PhysicsComponent {
@@ -156,7 +160,7 @@ impl<'a> System<'a> for PlayerControlSystem {
             {
                 player_controls
                     .dodge_cooldown
-                    .set(*sim_time, DODGE_COOLDOWN);
+                    .set(*sim_time, player_controls.dodge_cooldown_time);
                 let hitbox = hitboxes.get(player_ent).unwrap();
                 let mut the_position = (
                     transform.position.x.floor() as i32,

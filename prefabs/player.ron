@@ -6,7 +6,11 @@ Prefab(
             (name: "colour", value: "Color::BLUE"),
         ]),
 	(name: "HitBox", properties: [(name: "radius", value: "15.0")]),
-	(name: "PlayerControls", properties: [(name: "fire_rate", value: "0.7"), (name: "bullet_damage", value:"1")]),
+	(name: "PlayerControls", properties: [
+            (name: "fire_rate", value: "0.7"),
+            (name: "bullet_damage", value:"1"),
+            (name: "dodge_cooldown_time", value:"2.0"),
+        ]),
 	(name: "PhysicsComponent", properties: [(name: "max_speed", value: "200.0")]),
 	(name: "TeamWrap", properties: [(name: "team", value: "Team::Player")]),
 	(name: "Combative", properties: [(name: "max_hp", value: "3")]),

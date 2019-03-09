@@ -11,8 +11,8 @@ pub const RANGE2: f32 = 300.0;
 pub enum Item {
     AttackSpeed,         // Done
     MaxHealth,           // Done
-    TripleShot,          // Needs work in player probably a flag
-    ExtraDamage,         // Extra damage needs work in combative and a var in player
+    TripleShot,          // Done
+    ExtraDamage,         // Done
     Penetrating,         // Needs work in combative - probably a bullet flag
     ReduceDodgeCooldown, // Needs work in player var
     SpeedIncrease,       // Needs work in player var

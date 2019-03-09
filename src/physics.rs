@@ -39,6 +39,7 @@ impl Component for Transform {
 pub struct Bullet {
     pub radius: f32,
     pub damage: i32,
+    pub penetrating: bool,
 }
 
 impl Component for Bullet {
