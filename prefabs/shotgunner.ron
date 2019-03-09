@@ -1,0 +1,16 @@
+Prefab(
+    name: "shotgunner",
+    components: [
+	(name: "RenderComponent", properties: [
+            (name: "radius", value: "15.5"),
+            (name: "colour", value: "Color::RED"),
+        ]),
+	(name: "HitBox", properties: [(name: "radius", value: "15.5")]),
+	(name: "ShotgunnerAI"),
+	(name: "PhysicsComponent", properties: [(name: "max_speed", value: "30.0")]),
+	(name: "Combative", properties: [(name: "max_hp", value: "2")]),
+	(name: "LevelObject"),
+	(name: "TeamWrap", properties: [(name: "team", value: "Team::Enemy")]),
+	(name: "Asleep"),
+    ],
+)

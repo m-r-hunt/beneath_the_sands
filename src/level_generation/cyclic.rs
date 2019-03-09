@@ -1,4 +1,4 @@
-use super::{GeneratedLevel, StringErr, FLOOR, WALL};
+use super::{EnemyType, GeneratedLevel, StringErr, FLOOR, WALL};
 use crate::physics::TileMap;
 use crate::prelude::*;
 use std::collections::HashSet;
@@ -170,11 +170,27 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
         if *room == (0, 0) {
             continue;
         }
-        chode_positions.push((room.0 * 20 + 5, room.1 * 20 + 5));
+        chode_positions.push((
+            room.0 * 20 + 5,
+            room.1 * 20 + 5,
+            if rng.gen_range(0.0, 1.0) > 0.8 {
+                EnemyType::Shotgunner
+            } else {
+                EnemyType::Chode
+            },
+        ));
     }
     for room in side_path.iter() {
         carve_room(*room, (10, 10), &mut tile_map);
-        chode_positions.push((room.0 * 20 + 5, room.1 * 20 + 5));
+        chode_positions.push((
+            room.0 * 20 + 5,
+            room.1 * 20 + 5,
+            if rng.gen_range(0.0, 1.0) > 0.8 {
+                EnemyType::Shotgunner
+            } else {
+                EnemyType::Chode
+            },
+        ));
     }
     for i in 0..path.len() - 1 {
         let dx = path[i + 1].0 - path[i].0;

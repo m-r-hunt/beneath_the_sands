@@ -1,4 +1,4 @@
-use super::{GeneratedLevel, StringErr, FLOOR, WALL};
+use super::{EnemyType, GeneratedLevel, StringErr, FLOOR, WALL};
 use crate::physics::TileMap;
 use crate::prelude::*;
 use std::collections::HashMap;
@@ -16,6 +16,7 @@ fn r_n(level: &HashMap<(i32, i32), i32>, n: i32, (x, y): (i32, i32)) -> i32 {
     total
 }
 
+#[allow(clippy::cyclomatic_complexity)] // /me cries in professional
 pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
     let mut rng = rand::thread_rng();
     let mut level = HashMap::new();
@@ -93,8 +94,16 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
 
     let mut chode_positions = Vec::new();
     for _ in 0..30 {
-        let p = (rng.gen_range(0, LEVEL_SIZE), rng.gen_range(0, LEVEL_SIZE));
-        if level[&p] == 0 {
+        let p = (
+            rng.gen_range(0, LEVEL_SIZE),
+            rng.gen_range(0, LEVEL_SIZE),
+            if rng.gen_range(0.0, 1.0) > 0.8 {
+                EnemyType::Shotgunner
+            } else {
+                EnemyType::Chode
+            },
+        );
+        if level[&(p.0, p.1)] == 0 {
             chode_positions.push(p);
         }
     }

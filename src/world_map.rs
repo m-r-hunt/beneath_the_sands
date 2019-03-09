@@ -1,4 +1,4 @@
-use crate::level_generation::{generate_level, LevelStyle};
+use crate::level_generation::{generate_level, EnemyType, LevelStyle};
 use crate::physics::TileMap;
 use crate::player::PlayerControls;
 use crate::prelude::*;
@@ -117,16 +117,18 @@ impl<'a> System<'a> for WorldMapScreen {
                     })
                     .build();
                 for cp in level.chode_positions {
-                    lazy_update
-                        .create_entity(&entities)
-                        .with_chode_prefab()
-                        .with(Transform {
-                            position: Vector::new(
-                                cp.0 as f32 * TILE_SIZE + TILE_SIZE / 2.0,
-                                cp.1 as f32 * TILE_SIZE + TILE_SIZE / 2.0,
-                            ),
-                        })
-                        .build();
+                    let mut ent = lazy_update.create_entity(&entities);
+                    match cp.2 {
+                        EnemyType::Chode => ent = ent.with_chode_prefab(),
+                        EnemyType::Shotgunner => ent = ent.with_shotgunner_prefab(),
+                    }
+                    ent.with(Transform {
+                        position: Vector::new(
+                            cp.0 as f32 * TILE_SIZE + TILE_SIZE / 2.0,
+                            cp.1 as f32 * TILE_SIZE + TILE_SIZE / 2.0,
+                        ),
+                    })
+                    .build();
                 }
                 current_dungeon.entity = Some(e);
                 for (camera, transform) in (&mut cameras, &mut transforms).join() {

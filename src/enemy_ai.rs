@@ -7,6 +7,8 @@ use crate::{Event, EventQueue};
 const TARGET_DISTANCE: f32 = 100.0;
 const CHODE_ACCELERATION: f32 = 300.0;
 const CHODE_FIRE_COOLDOWN: f32 = 1.0;
+const SHOTGUNNER_ACCELERATION: f32 = 200.0;
+const SHOTGUNNER_FIRE_COOLDOWN: f32 = 2.0;
 
 #[derive(Default)]
 pub struct ChodeAI {
@@ -17,15 +19,29 @@ impl Component for ChodeAI {
     type Storage = HashMapStorage<Self>;
 }
 
+#[derive(Default)]
+pub struct ShotgunnerAI {
+    pub fire_cooldown: Timer,
+}
+
+impl Component for ShotgunnerAI {
+    type Storage = HashMapStorage<Self>;
+}
+
 pub struct ChodeDeath;
 
 impl<'a> System<'a> for ChodeDeath {
-    type SystemData = (Entities<'a>, Read<'a, EventQueue>, ReadStorage<'a, ChodeAI>);
+    type SystemData = (
+        Entities<'a>,
+        Read<'a, EventQueue>,
+        ReadStorage<'a, ChodeAI>,
+        ReadStorage<'a, ShotgunnerAI>,
+    );
 
-    fn run(&mut self, (entities, event_queue, chode_ais): Self::SystemData) {
+    fn run(&mut self, (entities, event_queue, chode_ais, shotgunner_ais): Self::SystemData) {
         for event in event_queue.iter() {
             if let Event::EntityKilled(ent) = event {
-                if chode_ais.get(*ent).is_some() {
+                if chode_ais.get(*ent).is_some() || shotgunner_ais.get(*ent).is_some() {
                     entities.delete(*ent).unwrap();
                 }
             }
@@ -95,6 +111,109 @@ impl<'a> System<'a> for RunChodeAI {
                     .with(TeamWrap { team: Team::Enemy })
                     .build();
                 chode.fire_cooldown.set(*sim_time, CHODE_FIRE_COOLDOWN);
+            }
+        }
+    }
+}
+
+pub struct RunShotgunnerAI;
+
+impl<'a> System<'a> for RunShotgunnerAI {
+    type SystemData = (
+        WriteStorage<'a, ShotgunnerAI>,
+        WriteStorage<'a, PhysicsComponent>,
+        ReadStorage<'a, PlayerControls>,
+        ReadStorage<'a, Transform>,
+        ReadStorage<'a, Asleep>,
+        Read<'a, SimTime>,
+        Entities<'a>,
+        Read<'a, LazyUpdate>,
+    );
+
+    fn run(
+        &mut self,
+        (
+            mut shotgunner_ais,
+            mut physics,
+            player_controls,
+            transforms,
+            asleeps,
+            sim_time,
+            entities,
+            lazy_update,
+        ): Self::SystemData,
+    ) {
+        let mut player_pos = Vector::new(0.0, 0.0);
+        for (_, player_transform) in (&player_controls, &transforms).join() {
+            player_pos = player_transform.position;
+        }
+
+        for (shotgunner, transform, physics, _) in
+            (&mut shotgunner_ais, &transforms, &mut physics, !&asleeps).join()
+        {
+            let target_point =
+                player_pos + (transform.position - player_pos).with_len(TARGET_DISTANCE);
+            let dir = target_point - transform.position;
+            if dir.len2() >= std::f32::EPSILON {
+                physics.acceleration = dir.with_len(SHOTGUNNER_ACCELERATION);
+            }
+            if dir.len2() < 50.0 * 50.0 {
+                physics.acceleration *= dir.len2() / 50.0 * 50.0;
+                physics.velocity *= dir.len2() / 50.0 * 50.0;
+            }
+
+            if shotgunner.fire_cooldown.expired(*sim_time) {
+                let bullet_speed = 400.0;
+                let velocity = (player_pos - transform.position).with_len(bullet_speed);
+                let position = transform.position + velocity.with_len(30.0);
+                lazy_update
+                    .create_entity(&entities)
+                    .with_bullet_prefab()
+                    .with(Transform { position })
+                    .with(PhysicsComponent {
+                        velocity,
+                        max_speed: bullet_speed,
+                        ..Default::default()
+                    })
+                    .with(TeamWrap { team: Team::Enemy })
+                    .build();
+                for bullet in 1..3 {
+                    let velocity = Vector::from_angle(
+                        (player_pos - transform.position).angle() + 10.0 * bullet as f32,
+                    )
+                    .with_len(bullet_speed);
+                    let position = transform.position + velocity.with_len(30.0);
+                    lazy_update
+                        .create_entity(&entities)
+                        .with_bullet_prefab()
+                        .with(Transform { position })
+                        .with(PhysicsComponent {
+                            velocity,
+                            max_speed: bullet_speed,
+                            ..Default::default()
+                        })
+                        .with(TeamWrap { team: Team::Enemy })
+                        .build();
+                    let velocity = Vector::from_angle(
+                        (player_pos - transform.position).angle() - 10.0 * bullet as f32,
+                    )
+                    .with_len(bullet_speed);
+                    let position = transform.position + velocity.with_len(30.0);
+                    lazy_update
+                        .create_entity(&entities)
+                        .with_bullet_prefab()
+                        .with(Transform { position })
+                        .with(PhysicsComponent {
+                            velocity,
+                            max_speed: bullet_speed,
+                            ..Default::default()
+                        })
+                        .with(TeamWrap { team: Team::Enemy })
+                        .build();
+                }
+                shotgunner
+                    .fire_cooldown
+                    .set(*sim_time, SHOTGUNNER_FIRE_COOLDOWN);
             }
         }
     }

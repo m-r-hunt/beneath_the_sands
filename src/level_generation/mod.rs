@@ -33,11 +33,16 @@ pub fn generate_level(style: LevelStyle) -> GeneratedLevel {
     }
 }
 
+pub enum EnemyType {
+    Chode,
+    Shotgunner,
+}
+
 pub struct GeneratedLevel {
     pub tile_map: TileMap,
     pub start_position: (i32, i32),
     pub exit_position: (i32, i32),
-    pub chode_positions: Vec<(i32, i32)>,
+    pub chode_positions: Vec<(i32, i32, EnemyType)>,
 }
 
 #[derive(Debug)]
