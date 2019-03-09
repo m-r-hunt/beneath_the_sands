@@ -167,7 +167,7 @@ impl<'a> System<'a> for ExitSystem {
                         })
                         .with(Boss {
                             attacks: vec![BossAttack::Lines, BossAttack::Sideswipe],
-                            attack_cooldown: Timer::new_set(*sim_time, 5.0),
+                            attack_cooldown: Timer::new_set(*sim_time, 3.0),
                             ..Default::default()
                         })
                         .build();
