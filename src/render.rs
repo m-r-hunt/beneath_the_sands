@@ -15,12 +15,15 @@ pub struct TileMapRender<'a> {
 impl<'a: 'b, 'b> System<'b> for TileMapRender<'a> {
     type SystemData = (
         Read<'b, TileMap>,
-        ReadExpect<'b, Camera>,
+        ReadStorage<'b, Camera>,
         ReadStorage<'b, Transform>,
     );
 
-    fn run(&mut self, (tilemap, camera, movements): Self::SystemData) {
-        let camera_pos = camera.get_position(&movements, self.window);
+    fn run(&mut self, (tilemap, camera, transforms): Self::SystemData) {
+        let mut camera_pos = Vector::new(-1.0, -1.0);
+        for (_, camera_transform) in (&camera, &transforms).join() {
+            camera_pos = camera_transform.position;
+        }
         let screen_size = self.window.screen_size();
         let min_tile_x = (camera_pos.x / TILE_SIZE).floor() as i32;
         let min_tile_y = (camera_pos.y / TILE_SIZE).floor() as i32;
@@ -64,14 +67,17 @@ pub struct Render<'a> {
 
 impl<'a: 'b, 'b> System<'b> for Render<'a> {
     type SystemData = (
-        ReadExpect<'b, Camera>,
+        ReadStorage<'b, Camera>,
         ReadStorage<'b, Transform>,
         ReadStorage<'b, RenderComponent>,
     );
 
-    fn run(&mut self, (camera, movements, render): Self::SystemData) {
-        let camera_pos = camera.get_position(&movements, self.window);
-        for (movement, render) in (&movements, &render).join() {
+    fn run(&mut self, (camera, transforms, render): Self::SystemData) {
+        let mut camera_pos = Vector::new(-1.0, -1.0);
+        for (_, camera_transform) in (&camera, &transforms).join() {
+            camera_pos = camera_transform.position;
+        }
+        for (movement, render) in (&transforms, &render).join() {
             let circle = Circle::new(movement.position - camera_pos, render.radius);
             self.window.draw(
                 &circle,
@@ -155,16 +161,10 @@ fn draw_cursor(cursor_pos: Vector, window: &mut Window) {
 }
 
 impl<'a: 'b, 'b> System<'b> for RenderCursor<'a> {
-    type SystemData = (
-        ReadExpect<'b, Camera>,
-        Read<'b, Input>,
-        ReadStorage<'b, Transform>,
-    );
+    type SystemData = (Read<'b, Input>,);
 
-    fn run(&mut self, (camera, input, movements): Self::SystemData) {
-        let camera_pos = camera.get_position(&movements, self.window);
-        let cursor_pos = input.mouse_pos - camera_pos;
-        draw_cursor(cursor_pos, self.window);
+    fn run(&mut self, (input,): Self::SystemData) {
+        draw_cursor(input.raw_mouse_pos, self.window);
     }
 }
 

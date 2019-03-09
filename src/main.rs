@@ -57,6 +57,7 @@ mod all_components {
     pub use crate::physics::{Bullet, CollidingWithWall, HitBox, PhysicsComponent, Transform};
     pub use crate::player::PlayerControls;
     pub use crate::render::RenderComponent;
+    pub use crate::Camera;
 }
 use all_components::*;
 
@@ -170,13 +171,38 @@ pub struct Camera {
     follow: Entity,
 }
 
-impl Camera {
-    fn get_position<'a>(&self, movements: &ReadStorage<'a, Transform>, window: &Window) -> Vector {
-        movements
-            .get(self.follow)
-            .expect("TODO: Remember where the camera was last and don't crash")
-            .position
-            - window.screen_size() / 2.0
+impl Component for Camera {
+    type Storage = HashMapStorage<Self>;
+}
+
+pub struct CameraSystem;
+
+const CAMERA_ACCELERATION: f32 = 100.0;
+
+impl<'a> System<'a> for CameraSystem {
+    type SystemData = (
+        ReadStorage<'a, Camera>,
+        WriteStorage<'a, PhysicsComponent>,
+        ReadStorage<'a, Transform>,
+        Write<'a, Input>,
+        Read<'a, ScreenSize>,
+    );
+
+    fn run(
+        &mut self,
+        (cameras, mut physics, transforms, mut input, screen_size): Self::SystemData,
+    ) {
+        for (camera_transform, camera_physics, camera) in
+            (&transforms, &mut physics, &cameras).join()
+        {
+            input.mouse_pos = input.raw_mouse_pos + camera_transform.position;
+
+            let transform = transforms.get(camera.follow).unwrap();
+            let target_point = transform.position - screen_size.size / 2.0;
+
+            camera_physics.acceleration =
+                (target_point - camera_transform.position).with_len(CAMERA_ACCELERATION);
+        }
     }
 }
 
@@ -212,6 +238,7 @@ impl State for GameState {
         world.register::<Boss>();
         world.register::<PenetratingBullet>();
         world.register::<Asleep>();
+        world.register::<Camera>();
 
         let player = world
             .create_entity()
@@ -228,11 +255,15 @@ impl State for GameState {
                 position: Vector::new(SCREEN_WIDTH / 2.0, 100.0),
             })
             .build();
+        world
+            .create_entity()
+            .with_camera_prefab()
+            .with(Camera { follow: player })
+            .build();
         world.add_resource::<Input>(Default::default());
         world.add_resource::<SimTime>(Default::default());
         world.add_resource::<EventQueue>(Default::default());
         world.add_resource::<TileMap>(level.tile_map);
-        world.add_resource(Camera { follow: player });
         world.add_resource(UIState::Title);
         world.add_resource::<ScreenSize>(Default::default());
         world.add_resource::<PlayerProgression>(Default::default());
@@ -257,11 +288,7 @@ impl State for GameState {
             dodge: window.mouse()[MouseButton::Right].is_down()
                 || window.keyboard()[Key::LShift].is_down(),
             raw_mouse_pos: window.mouse().pos(),
-            mouse_pos: window.mouse().pos()
-                + self
-                    .world
-                    .read_resource::<Camera>()
-                    .get_position(&self.world.read_storage(), window),
+            mouse_pos: Vector::new(-1.0, -1.0),
             clicked: window.mouse()[MouseButton::Left] == ButtonState::Pressed,
         };
         self.world.add_resource(input);
@@ -287,19 +314,6 @@ impl State for GameState {
                 Ok(())
             }
             UIState::Playing => {
-                // Noclip mode, a bit hacky.
-                if window.keyboard()[Key::N] == ButtonState::Pressed {
-                    let player = self.world.read_resource::<Camera>().follow;
-                    if self.world.read_storage::<HitBox>().get(player).is_some() {
-                        self.world.write_storage::<HitBox>().remove(player);
-                    } else {
-                        self.world
-                            .write_storage::<HitBox>()
-                            .insert(player, HitBox { radius: 15.0 })
-                            .expect("Player should be alive"); // TODO Don't hardcode radius
-                    }
-                }
-
                 let mut sim_time = *self.world.read_resource::<SimTime>();
                 sim_time.time += 1.0 / 60.0; // Quicksilver tries to call at 60fps
                 sim_time.dt = 1.0 / 60.0;
@@ -409,7 +423,8 @@ fn draw_text_centered(text: &str, position: Vector, font: &Font, window: &mut Wi
 
 fn make_dispatcher<'a, 'b>() -> Dispatcher<'a, 'b> {
     DispatcherBuilder::new()
-        .with(PlayerControlSystem, "player_control", &[])
+        .with(CameraSystem, "camera_system", &[])
+        .with(PlayerControlSystem, "player_control", &["camera_system"])
         .with(RunChodeAI, "run_chode_ai", &[])
         .with(RunBossAI, "run_boss_ai", &[])
         .with(
