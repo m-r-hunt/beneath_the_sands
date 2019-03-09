@@ -1,5 +1,5 @@
-use super::{GeneratedLevel, StringErr};
-use crate::physics::{Tile, TileMap};
+use super::{GeneratedLevel, StringErr, FLOOR, WALL};
+use crate::physics::TileMap;
 use crate::prelude::*;
 use std::collections::HashMap;
 
@@ -56,34 +56,16 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
     let mut tiles = HashMap::new();
     for x in -1..=LEVEL_SIZE {
         for y in -1..=LEVEL_SIZE {
-            tiles.insert(
-                (x, y),
-                Tile {
-                    collision: true,
-                    colour: rgba!(128, 128, 128, 1.0),
-                },
-            );
+            tiles.insert((x, y), WALL);
         }
     }
 
     for x in 0..LEVEL_SIZE {
         for y in 0..LEVEL_SIZE {
             if level[&(x, y)] == 1 {
-                tiles.insert(
-                    (x, y),
-                    Tile {
-                        collision: true,
-                        colour: rgba!(128, 128, 128, 1.0),
-                    },
-                );
+                tiles.insert((x, y), WALL);
             } else {
-                tiles.insert(
-                    (x, y),
-                    Tile {
-                        collision: false,
-                        colour: rgba!(223, 201, 96, 1.0),
-                    },
-                );
+                tiles.insert((x, y), FLOOR);
             }
         }
     }

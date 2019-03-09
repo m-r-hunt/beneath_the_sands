@@ -1,5 +1,5 @@
-use super::{GeneratedLevel, StringErr};
-use crate::physics::{Tile, TileMap};
+use super::{GeneratedLevel, StringErr, FLOOR, WALL};
+use crate::physics::TileMap;
 use crate::prelude::*;
 use std::collections::HashSet;
 
@@ -12,24 +12,16 @@ use std::collections::HashSet;
 fn carve_room(position: (i32, i32), size: (i32, i32), tile_map: &mut TileMap) {
     for x in -1..=size.0 {
         for y in -1..=size.1 {
-            tile_map.tiles.insert(
-                (position.0 * 20 + x, position.1 * 20 + y),
-                Tile {
-                    collision: true,
-                    colour: rgba!(128, 128, 128, 1.0),
-                },
-            );
+            tile_map
+                .tiles
+                .insert((position.0 * 20 + x, position.1 * 20 + y), WALL);
         }
     }
     for x in 0..size.0 {
         for y in 0..size.1 {
-            tile_map.tiles.insert(
-                (position.0 * 20 + x, position.1 * 20 + y),
-                Tile {
-                    collision: false,
-                    colour: rgba!(223, 201, 96, 1.0),
-                },
-            );
+            tile_map
+                .tiles
+                .insert((position.0 * 20 + x, position.1 * 20 + y), FLOOR);
         }
     }
 }
@@ -195,40 +187,28 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
                         path[i].0 * 20 + offset + step * dx,
                         path[i].1 * 20 + 4 + step * dy,
                     ),
-                    Tile {
-                        collision: true,
-                        colour: rgba!(128, 128, 128, 1.0),
-                    },
+                    WALL,
                 );
                 tile_map.tiles.insert(
                     (
                         path[i].0 * 20 + offset + step * dx,
                         path[i].1 * 20 + 5 + step * dy,
                     ),
-                    Tile {
-                        collision: false,
-                        colour: rgba!(223, 201, 96, 1.0),
-                    },
+                    FLOOR,
                 );
                 tile_map.tiles.insert(
                     (
                         path[i].0 * 20 + offset + step * dx,
                         path[i].1 * 20 + 6 + step * dy,
                     ),
-                    Tile {
-                        collision: false,
-                        colour: rgba!(223, 201, 96, 1.0),
-                    },
+                    FLOOR,
                 );
                 tile_map.tiles.insert(
                     (
                         path[i].0 * 20 + offset + step * dx,
                         path[i].1 * 20 + 7 + step * dy,
                     ),
-                    Tile {
-                        collision: true,
-                        colour: rgba!(128, 128, 128, 1.0),
-                    },
+                    WALL,
                 );
             }
         } else {
@@ -240,40 +220,28 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
                         path[i].0 * 20 + 4 + step * dx,
                         path[i].1 * 20 + offset + step * dy,
                     ),
-                    Tile {
-                        collision: true,
-                        colour: rgba!(128, 128, 128, 1.0),
-                    },
+                    WALL,
                 );
                 tile_map.tiles.insert(
                     (
                         path[i].0 * 20 + 5 + step * dx,
                         path[i].1 * 20 + offset + step * dy,
                     ),
-                    Tile {
-                        collision: false,
-                        colour: rgba!(223, 201, 96, 1.0),
-                    },
+                    FLOOR,
                 );
                 tile_map.tiles.insert(
                     (
                         path[i].0 * 20 + 6 + step * dx,
                         path[i].1 * 20 + offset + step * dy,
                     ),
-                    Tile {
-                        collision: false,
-                        colour: rgba!(223, 201, 96, 1.0),
-                    },
+                    FLOOR,
                 );
                 tile_map.tiles.insert(
                     (
                         path[i].0 * 20 + 7 + step * dx,
                         path[i].1 * 20 + offset + step * dy,
                     ),
-                    Tile {
-                        collision: true,
-                        colour: rgba!(128, 128, 128, 1.0),
-                    },
+                    WALL,
                 );
             }
         }
@@ -290,40 +258,28 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
                         side_path[i].0 * 20 + offset + step * dx,
                         side_path[i].1 * 20 + 4 + step * dy,
                     ),
-                    Tile {
-                        collision: true,
-                        colour: rgba!(128, 128, 128, 1.0),
-                    },
+                    WALL,
                 );
                 tile_map.tiles.insert(
                     (
                         side_path[i].0 * 20 + offset + step * dx,
                         side_path[i].1 * 20 + 5 + step * dy,
                     ),
-                    Tile {
-                        collision: false,
-                        colour: rgba!(223, 201, 96, 1.0),
-                    },
+                    FLOOR,
                 );
                 tile_map.tiles.insert(
                     (
                         side_path[i].0 * 20 + offset + step * dx,
                         side_path[i].1 * 20 + 6 + step * dy,
                     ),
-                    Tile {
-                        collision: false,
-                        colour: rgba!(223, 201, 96, 1.0),
-                    },
+                    FLOOR,
                 );
                 tile_map.tiles.insert(
                     (
                         side_path[i].0 * 20 + offset + step * dx,
                         side_path[i].1 * 20 + 7 + step * dy,
                     ),
-                    Tile {
-                        collision: true,
-                        colour: rgba!(128, 128, 128, 1.0),
-                    },
+                    WALL,
                 );
             }
         } else {
@@ -335,40 +291,28 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
                         side_path[i].0 * 20 + 4 + step * dx,
                         side_path[i].1 * 20 + offset + step * dy,
                     ),
-                    Tile {
-                        collision: true,
-                        colour: rgba!(128, 128, 128, 1.0),
-                    },
+                    WALL,
                 );
                 tile_map.tiles.insert(
                     (
                         side_path[i].0 * 20 + 5 + step * dx,
                         side_path[i].1 * 20 + offset + step * dy,
                     ),
-                    Tile {
-                        collision: false,
-                        colour: rgba!(223, 201, 96, 1.0),
-                    },
+                    FLOOR,
                 );
                 tile_map.tiles.insert(
                     (
                         side_path[i].0 * 20 + 6 + step * dx,
                         side_path[i].1 * 20 + offset + step * dy,
                     ),
-                    Tile {
-                        collision: false,
-                        colour: rgba!(223, 201, 96, 1.0),
-                    },
+                    FLOOR,
                 );
                 tile_map.tiles.insert(
                     (
                         side_path[i].0 * 20 + 7 + step * dx,
                         side_path[i].1 * 20 + offset + step * dy,
                     ),
-                    Tile {
-                        collision: true,
-                        colour: rgba!(128, 128, 128, 1.0),
-                    },
+                    WALL,
                 );
             }
         }

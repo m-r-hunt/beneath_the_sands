@@ -1,4 +1,5 @@
-use crate::physics::{hitbox_overlap, Bullet, CollidingWithWall, HitBox, TileMap};
+use crate::level_generation::{self, BOSS_ARENA_SIZE};
+use crate::physics::{hitbox_overlap, Bullet, CollidingWithWall, HitBox, TileMap, TILE_SIZE};
 use crate::player::PlayerControls;
 use crate::prelude::*;
 use crate::world_map::{CurrentDungeon, Dungeon, Item, Reward};
@@ -148,14 +149,14 @@ impl<'a> System<'a> for ExitSystem {
                         .create_entity(&entities)
                         .with_boss_prefab()
                         .with(Transform {
-                            position: Vector::new(0.0, 0.0),
+                            position: Vector::new(0.0, -(BOSS_ARENA_SIZE as f32 - 2.0) * TILE_SIZE),
                         })
                         .build();
                     for (player_transform, _) in (&mut transforms, &players).join() {
-                        player_transform.position.x = 0.0;
-                        player_transform.position.y = 100.0;
+                        player_transform.position =
+                            Vector::new(0.0, (BOSS_ARENA_SIZE as f32 - 1.0) * TILE_SIZE);
                     }
-                    *tile_map = Default::default(); // Todo set up a proper arena
+                    *tile_map = level_generation::make_boss_arena();
                 }
                 Reward::Choice(_item1, _item2) => {
                     *ui_state = UIState::Choice;
