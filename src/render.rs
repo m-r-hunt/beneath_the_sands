@@ -1,4 +1,4 @@
-use crate::gameplay::Combative;
+use crate::gameplay::{Boss, Combative};
 use crate::physics::{TileMap, TILE_SIZE};
 use crate::player::PlayerControls;
 use crate::prelude::*;
@@ -86,13 +86,25 @@ pub struct RenderUI<'a> {
 }
 
 impl<'a: 'b, 'b> System<'b> for RenderUI<'a> {
-    type SystemData = (ReadStorage<'b, PlayerControls>, ReadStorage<'b, Combative>);
+    type SystemData = (
+        ReadStorage<'b, PlayerControls>,
+        ReadStorage<'b, Combative>,
+        ReadStorage<'b, Boss>,
+    );
 
-    fn run(&mut self, (players, combative): Self::SystemData) {
+    fn run(&mut self, (players, combative, bosses): Self::SystemData) {
         for (_, c) in (&players, &combative).join() {
             draw_text_centered(
                 &format!("Health: {} / {}", c.max_hp - c.damage, c.max_hp),
-                Vector::new(50, 25),
+                Vector::new(100, 25),
+                &self.font,
+                self.window,
+            );
+        }
+        for (_, c) in (&bosses, &combative).join() {
+            draw_text_centered(
+                &format!("Boss Health: {} / {}", c.max_hp - c.damage, c.max_hp),
+                Vector::new(100, 50),
                 &self.font,
                 self.window,
             );

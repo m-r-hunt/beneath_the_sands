@@ -1,8 +1,8 @@
-use crate::physics::{hitbox_overlap, Bullet, CollidingWithWall, HitBox};
+use crate::physics::{hitbox_overlap, Bullet, CollidingWithWall, HitBox, TileMap};
 use crate::player::PlayerControls;
 use crate::prelude::*;
 use crate::world_map::{CurrentDungeon, Dungeon, Item, Reward};
-use crate::{Event, EventQueue, Input, ScreenSize, UIState};
+use crate::{Event, EventQueue, Input, PlayerProgression, ScreenSize, UIState};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum Team {
@@ -93,7 +93,7 @@ pub struct ExitSystem;
 // This has a lot of game logic stuffed into basically a collision check with the stairs...
 impl<'a> System<'a> for ExitSystem {
     type SystemData = (
-        ReadStorage<'a, Transform>,
+        WriteStorage<'a, Transform>,
         ReadStorage<'a, Exit>,
         ReadStorage<'a, PlayerControls>,
         Write<'a, UIState>,
@@ -102,12 +102,14 @@ impl<'a> System<'a> for ExitSystem {
         WriteStorage<'a, Dungeon>,
         ReadStorage<'a, LevelObject>,
         Entities<'a>,
+        Read<'a, LazyUpdate>,
+        Write<'a, TileMap>,
     );
 
     fn run(
         &mut self,
         (
-            transforms,
+            mut transforms,
             exits,
             players,
             mut ui_state,
@@ -116,30 +118,47 @@ impl<'a> System<'a> for ExitSystem {
             mut dungeons,
             level_objects,
             entities,
+            lazy_update,
+            mut tile_map,
         ): Self::SystemData,
     ) {
+        let mut exit = false;
         for (exit_transform, exit_hitbox, _) in (&transforms, &hitboxes, &exits).join() {
             for (player_transform, player_hitbox, _) in (&transforms, &hitboxes, &players).join() {
                 if hitbox_overlap(player_transform, player_hitbox, exit_transform, exit_hitbox) {
-                    let current_dungeon = current_dungeon
-                        .entity
-                        .expect("We should be playing a dungeon when we hit an exit.");
-                    let current_dungeon = dungeons
-                        .get_mut(current_dungeon)
-                        .expect("The current dungeon should be valid when hitting an exit.");
-                    current_dungeon.completed = true;
-                    for (_, ent) in (&level_objects, &entities).join() {
-                        entities.delete(ent).unwrap();
+                    exit = true;
+                }
+            }
+        }
+        if exit {
+            let current_dungeon = current_dungeon
+                .entity
+                .expect("We should be playing a dungeon when we hit an exit.");
+            let current_dungeon = dungeons
+                .get_mut(current_dungeon)
+                .expect("The current dungeon should be valid when hitting an exit.");
+            current_dungeon.completed = true;
+            for (_, ent) in (&level_objects, &entities).join() {
+                entities.delete(ent).unwrap();
+            }
+            match current_dungeon.reward {
+                Reward::Progress => {
+                    // Set up for boss fight
+                    lazy_update
+                        .create_entity(&entities)
+                        .with_boss_prefab()
+                        .with(Transform {
+                            position: Vector::new(0.0, 0.0),
+                        })
+                        .build();
+                    for (player_transform, _) in (&mut transforms, &players).join() {
+                        player_transform.position.x = 0.0;
+                        player_transform.position.y = 100.0;
                     }
-                    match current_dungeon.reward {
-                        Reward::Progress => {
-                            // Set up for boss fight
-                            *ui_state = UIState::BossFight;
-                        }
-                        Reward::Choice(_item1, _item2) => {
-                            *ui_state = UIState::Choice;
-                        }
-                    }
+                    *tile_map = Default::default(); // Todo set up a proper arena
+                }
+                Reward::Choice(_item1, _item2) => {
+                    *ui_state = UIState::Choice;
                 }
             }
         }
@@ -238,6 +257,47 @@ impl<'a> System<'a> for ChoiceSystem {
                 *ui_state = UIState::WorldMap;
             } else {
                 panic!("Bad choice state");
+            }
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct Boss;
+
+impl Component for Boss {
+    type Storage = HashMapStorage<Self>;
+}
+
+pub struct BossDeathSystem;
+
+impl<'a> System<'a> for BossDeathSystem {
+    type SystemData = (
+        Read<'a, EventQueue>,
+        ReadStorage<'a, Boss>,
+        ReadStorage<'a, LevelObject>,
+        Entities<'a>,
+        Write<'a, UIState>,
+        Write<'a, PlayerProgression>,
+    );
+
+    fn run(
+        &mut self,
+        (event_queue, bosses, level_objects, entities, mut ui_state, mut progress): Self::SystemData,
+    ) {
+        for event in event_queue.iter() {
+            if let Event::EntityKilled(ent) = event {
+                if bosses.get(*ent).is_some() {
+                    for (ent, _) in (&entities, &level_objects).join() {
+                        entities.delete(ent).unwrap();
+                    }
+                    if !progress.range_extended {
+                        progress.range_extended = true;
+                        *ui_state = UIState::WorldMap;
+                    } else {
+                        *ui_state = UIState::Victory;
+                    }
+                }
             }
         }
     }

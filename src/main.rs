@@ -28,7 +28,8 @@ use player::{PlayerControlSystem, PlayerDeath};
 
 mod gameplay;
 use gameplay::{
-    BulletSelfDestruct, ChoiceSystem, CollisionHandler, CombativeCollisionHandler, ExitSystem,
+    BossDeathSystem, BulletSelfDestruct, ChoiceSystem, CollisionHandler, CombativeCollisionHandler,
+    ExitSystem,
 };
 
 mod render;
@@ -50,7 +51,7 @@ use enemy_ai::{ChodeDeath, RunChodeAI};
 
 mod all_components {
     pub use crate::enemy_ai::ChodeAI;
-    pub use crate::gameplay::{Combative, Destructable, Exit, LevelObject, Team, TeamWrap};
+    pub use crate::gameplay::{Boss, Combative, Destructable, Exit, LevelObject, Team, TeamWrap};
     pub use crate::physics::{Bullet, CollidingWithWall, HitBox, PhysicsComponent, Transform};
     pub use crate::player::PlayerControls;
     pub use crate::render::RenderComponent;
@@ -147,7 +148,6 @@ pub enum UIState {
     Pause,
     GameOver,
     Victory,
-    BossFight,
     Choice,
 }
 
@@ -207,6 +207,7 @@ impl State for GameState {
         world.register::<Combative>();
         world.register::<ChodeAI>();
         world.register::<TeamWrap>();
+        world.register::<Boss>();
 
         let player = world
             .create_entity()
@@ -423,6 +424,11 @@ fn make_dispatcher<'a, 'b>() -> Dispatcher<'a, 'b> {
             &["collision_detection"],
         )
         .with(ChodeDeath, "chode_death", &["combative_collision_handler"])
+        .with(
+            BossDeathSystem,
+            "boss_death",
+            &["combative_collision_handler"],
+        )
         .with(
             PlayerDeath,
             "player_death",

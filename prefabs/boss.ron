@@ -1,0 +1,15 @@
+Prefab(
+    name: "boss",
+    components: [
+	(name: "RenderComponent", properties: [
+            (name: "radius", value: "60.0"),
+            (name: "colour", value: "Color::RED"),
+        ]),
+	(name: "HitBox", properties: [(name: "radius", value: "60.0")]),
+	(name: "PhysicsComponent", properties: [(name: "max_speed", value: "200.0")]),
+	(name: "TeamWrap", properties: [(name: "team", value: "Team::Enemy")]),
+	(name: "Combative", properties: [(name: "max_hp", value: "10")]),
+	(name: "LevelObject"),
+	(name: "Boss"),
+    ],
+)
