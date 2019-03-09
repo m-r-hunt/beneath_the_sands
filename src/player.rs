@@ -1,6 +1,7 @@
 use crate::gameplay::{Team, TeamWrap};
 use crate::physics::{check_collision, Bullet, HitBox, PhysicsComponent, TileMap};
 use crate::prelude::*;
+use crate::world_map::Item;
 use crate::{Event, EventQueue, UIState};
 use crate::{Input, SimTime, Timer};
 
@@ -17,6 +18,7 @@ pub struct PlayerControls {
     pub penetrating: bool,
     pub dodge_cooldown_time: f32,
     pub backfire: bool,
+    pub items_acquired: Vec<Item>,
 }
 
 impl Component for PlayerControls {

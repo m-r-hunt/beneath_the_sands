@@ -253,6 +253,10 @@ fn apply_upgrade<'a>(
     combatives: &mut WriteStorage<'a, Combative>,
     physics: &mut WriteStorage<'a, PhysicsComponent>,
 ) {
+    for p in (players).join() {
+        p.items_acquired.push(item);
+    }
+
     match item {
         Item::AttackSpeed => {
             for p in (players).join() {

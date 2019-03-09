@@ -33,7 +33,9 @@ use gameplay::{
 };
 
 mod render;
-use render::{Render, RenderChoice, RenderCursor, RenderUI, TileMapRender, WorldMapRender};
+use render::{
+    Render, RenderChoice, RenderCursor, RenderInventory, RenderUI, TileMapRender, WorldMapRender,
+};
 
 mod prefabs;
 use prefabs::PrefabBuilder;
@@ -435,6 +437,11 @@ impl State for GameState {
                     &self.font,
                     window,
                 );
+                let mut render_inventory = RenderInventory {
+                    window,
+                    font: &self.font,
+                };
+                render_inventory.run_now(&self.world.res);
                 Ok(())
             }
             UIState::Choice => {

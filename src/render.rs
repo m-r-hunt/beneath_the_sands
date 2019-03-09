@@ -278,3 +278,31 @@ impl<'a: 'b, 'b> System<'b> for RenderChoice<'a> {
         }
     }
 }
+
+pub struct RenderInventory<'a> {
+    pub window: &'a mut Window,
+    pub font: &'a Font,
+}
+
+impl<'a: 'b, 'b> System<'b> for RenderInventory<'a> {
+    type SystemData = (ReadStorage<'b, PlayerControls>,);
+
+    fn run(&mut self, (players,): Self::SystemData) {
+        for p in (&players).join() {
+            draw_text_centered(
+                "Inventory:",
+                Vector::new(100.0, 50.0),
+                self.font,
+                self.window,
+            );
+            for (i, item) in p.items_acquired.iter().enumerate() {
+                draw_text_centered(
+                    &format!("{:?}", item),
+                    Vector::new(100.0, 100.0 + 50.0 * i as f32),
+                    self.font,
+                    self.window,
+                );
+            }
+        }
+    }
+}
