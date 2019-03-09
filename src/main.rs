@@ -335,13 +335,23 @@ impl State for GameState {
                 Ok(())
             }
             UIState::Playing => {
-                let mut sim_time = *self.world.read_resource::<SimTime>();
-                sim_time.time += 1.0 / 60.0; // Quicksilver tries to call at 60fps
-                sim_time.dt = 1.0 / 60.0;
-                self.world.add_resource(sim_time);
-                self.world.write_resource::<EventQueue>().clear();
-                self.dispatcher.dispatch(&self.world.res);
-                self.world.maintain();
+                if window.keyboard()[Key::Escape] == ButtonState::Pressed {
+                    self.world.add_resource(UIState::Pause);
+                } else {
+                    let mut sim_time = *self.world.read_resource::<SimTime>();
+                    sim_time.time += 1.0 / 60.0; // Quicksilver tries to call at 60fps
+                    sim_time.dt = 1.0 / 60.0;
+                    self.world.add_resource(sim_time);
+                    self.world.write_resource::<EventQueue>().clear();
+                    self.dispatcher.dispatch(&self.world.res);
+                    self.world.maintain();
+                }
+                Ok(())
+            }
+            UIState::Pause => {
+                if window.keyboard()[Key::Escape] == ButtonState::Pressed {
+                    self.world.add_resource(UIState::Playing);
+                }
                 Ok(())
             }
             UIState::Victory | UIState::GameOver => {
@@ -357,8 +367,6 @@ impl State for GameState {
                 ChoiceSystem.run_now(&self.world.res);
                 Ok(())
             }
-
-            _ => panic!("Unimplemented ui state"),
         }
     }
 
@@ -419,6 +427,16 @@ impl State for GameState {
                 );
                 Ok(())
             }
+            UIState::Pause => {
+                draw_text_centered("Pause", Vector::new(400, 300), &self.font, window);
+                draw_text_centered(
+                    "Press Esc to resume",
+                    Vector::new(400, 400),
+                    &self.font,
+                    window,
+                );
+                Ok(())
+            }
             UIState::Choice => {
                 let mut render_choice = RenderChoice {
                     window,
@@ -429,7 +447,6 @@ impl State for GameState {
                 render_cursor.run_now(&self.world.res);
                 Ok(())
             }
-            _ => panic!("Unimplented ui state"),
         }
     }
 }
