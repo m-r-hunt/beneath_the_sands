@@ -51,6 +51,9 @@ use world_map::{CurrentDungeon, Dungeon, WorldMapScreen};
 mod enemy_ai;
 use enemy_ai::{ChodeDeath, RunBossAI, RunChodeAI, RunShotgunnerAI, RunSpinnerAI};
 
+mod sound;
+use sound::{SoundQueue, SoundSystem};
+
 mod all_components {
     pub use crate::enemy_ai::{Boss, BossAttack, ChodeAI, ShotgunnerAI, SpinnerAI};
     pub use crate::gameplay::{
@@ -276,6 +279,7 @@ fn create_world() -> World {
     world.add_resource::<ScreenSize>(Default::default());
     world.add_resource::<PlayerProgression>(Default::default());
     world.add_resource::<CurrentDungeon>(Default::default());
+    world.add_resource::<SoundQueue>(Default::default());
 
     world_generation::generate_dungeons(&mut world);
     world
@@ -517,6 +521,7 @@ fn make_dispatcher<'a, 'b>() -> Dispatcher<'a, 'b> {
             "sleep_system",
             &["chode_death", "boss_death", "player_death"],
         )
+        .with_thread_local(SoundSystem::new())
         .build()
 }
 

@@ -1,6 +1,7 @@
 use crate::gameplay::{Team, TeamWrap};
 use crate::physics::{check_collision, Bullet, HitBox, PhysicsComponent, TileMap};
 use crate::prelude::*;
+use crate::sound::{SoundQueue, SoundRequest};
 use crate::world_map::Item;
 use crate::{Event, EventQueue, UIState};
 use crate::{Input, SimTime, Timer};
@@ -39,6 +40,7 @@ impl<'a> System<'a> for PlayerControlSystem {
         Read<'a, LazyUpdate>,
         Read<'a, TileMap>,
         Entities<'a>,
+        Write<'a, SoundQueue>,
     );
 
     fn run(
@@ -53,6 +55,7 @@ impl<'a> System<'a> for PlayerControlSystem {
             lazy_update,
             tile_map,
             entities,
+            mut sound_queue,
         ): Self::SystemData,
     ) {
         for (player_controls, transform, physics, player_ent) in (
@@ -172,6 +175,7 @@ impl<'a> System<'a> for PlayerControlSystem {
                         .with(TeamWrap { team: Team::Player })
                         .build();
                 }
+                sound_queue.enqueue(SoundRequest::PlayerShot);
                 player_controls
                     .fire_cooldown
                     .set(*sim_time, player_controls.fire_rate);
