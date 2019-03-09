@@ -167,6 +167,7 @@ struct GameState {
     title_image: Asset<Image>,
 }
 
+
 pub struct Camera {
     follow: Entity,
 }
@@ -177,31 +178,28 @@ impl Component for Camera {
 
 pub struct CameraSystem;
 
-const CAMERA_ACCELERATION: f32 = 100.0;
+const CAMERA_ACCELERATION: f32 = 1000.0;
+const CAMERA_DEAD_ZONE: f32 = 50.0;
 
 impl<'a> System<'a> for CameraSystem {
-    type SystemData = (
-        ReadStorage<'a, Camera>,
-        WriteStorage<'a, PhysicsComponent>,
-        ReadStorage<'a, Transform>,
-        Write<'a, Input>,
-        Read<'a, ScreenSize>,
-    );
+    type SystemData = (ReadStorage<'a, Camera>, WriteStorage<'a, PhysicsComponent>, ReadStorage<'a, Transform>, Write<'a, Input>, Read<'a, ScreenSize>);
 
-    fn run(
-        &mut self,
-        (cameras, mut physics, transforms, mut input, screen_size): Self::SystemData,
-    ) {
-        for (camera_transform, camera_physics, camera) in
-            (&transforms, &mut physics, &cameras).join()
-        {
+    fn run(&mut self, (cameras, mut physics, transforms, mut input, screen_size): Self::SystemData) {
+        for (camera_transform, camera_physics, camera) in (&transforms, &mut physics, &cameras).join() {
             input.mouse_pos = input.raw_mouse_pos + camera_transform.position;
 
             let transform = transforms.get(camera.follow).unwrap();
             let target_point = transform.position - screen_size.size / 2.0;
 
-            camera_physics.acceleration =
-                (target_point - camera_transform.position).with_len(CAMERA_ACCELERATION);
+            if (target_point - camera_transform.position).len2() <= CAMERA_DEAD_ZONE * CAMERA_DEAD_ZONE {
+                camera_physics.acceleration = Vector::new(0.0, 0.0);
+                camera_physics.velocity *= 0.6;
+                if camera_physics.velocity.len2() <= 100.0 {
+                    camera_physics.velocity = Vector::new(0.0, 0.0);
+                }
+            } else {
+                camera_physics.acceleration = (target_point - camera_transform.position).with_len(CAMERA_ACCELERATION);
+            }
         }
     }
 }
@@ -255,11 +253,7 @@ impl State for GameState {
                 position: Vector::new(SCREEN_WIDTH / 2.0, 100.0),
             })
             .build();
-        world
-            .create_entity()
-            .with_camera_prefab()
-            .with(Camera { follow: player })
-            .build();
+        world.create_entity().with_camera_prefab().with(Camera{ follow: player}).build();
         world.add_resource::<Input>(Default::default());
         world.add_resource::<SimTime>(Default::default());
         world.add_resource::<EventQueue>(Default::default());

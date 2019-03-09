@@ -2,6 +2,6 @@ Prefab(
     name: "camera",
     components: [
         (name: "Transform"),
-	(name: "PhysicsComponent", properties: [(name: "max_speed", value: "200.0")]),
+	(name: "PhysicsComponent", properties: [(name: "max_speed", value: "250.0")]),
     ],
 )
