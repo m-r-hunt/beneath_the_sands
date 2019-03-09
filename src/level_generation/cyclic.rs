@@ -30,6 +30,7 @@ fn manhatten_distance(from: (i32, i32), to: (i32, i32)) -> i32 {
     (from.0 - to.0).abs() + (from.1 - to.1).abs()
 }
 
+#[allow(clippy::cyclomatic_complexity)] // /me cries in professional
 pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
     let mut chode_positions = Vec::new();
     let mut rng = rand::thread_rng();
@@ -236,8 +237,8 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
                 for n in 1..9 {
                     tile_map.tiles.insert(
                         (
-                            path[i].0 * 20 + offset + step * dx,
-                            path[i].1 * 20 + n + step * dy,
+                            side_path[i].0 * 20 + offset + step * dx,
+                            side_path[i].1 * 20 + n + step * dy,
                         ),
                         WALL,
                     );
@@ -245,8 +246,8 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
                 for n in 2..8 {
                     tile_map.tiles.insert(
                         (
-                            path[i].0 * 20 + offset + step * dx,
-                            path[i].1 * 20 + n + step * dy,
+                            side_path[i].0 * 20 + offset + step * dx,
+                            side_path[i].1 * 20 + n + step * dy,
                         ),
                         FLOOR,
                     );
@@ -259,8 +260,8 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
                 for n in 1..9 {
                     tile_map.tiles.insert(
                         (
-                            path[i].0 * 20 + n + step * dx,
-                            path[i].1 * 20 + offset + step * dy,
+                            side_path[i].0 * 20 + n + step * dx,
+                            side_path[i].1 * 20 + offset + step * dy,
                         ),
                         WALL,
                     );
@@ -268,8 +269,8 @@ pub fn try_generate_level() -> Result<GeneratedLevel, StringErr> {
                 for n in 2..8 {
                     tile_map.tiles.insert(
                         (
-                            path[i].0 * 20 + n + step * dx,
-                            path[i].1 * 20 + offset + step * dy,
+                            side_path[i].0 * 20 + n + step * dx,
+                            side_path[i].1 * 20 + offset + step * dy,
                         ),
                         FLOOR,
                     );
