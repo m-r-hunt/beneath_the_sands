@@ -132,7 +132,7 @@ impl<'a> System<'a> for RunBossAI {
                                     .create_entity(&entities)
                                     .with_bullet_prefab()
                                     .with(Transform {
-                                        position: dbg!(position),
+                                        position: position,
                                     })
                                     .with(PhysicsComponent {
                                         velocity,
