@@ -29,7 +29,7 @@ use player::{PlayerControlSystem, PlayerDeath};
 mod gameplay;
 use gameplay::{
     BossDeathSystem, BulletSelfDestruct, ChoiceSystem, CollisionHandler, CombativeCollisionHandler,
-    ExitSystem,
+    ExitSystem, SleepSystem,
 };
 
 mod render;
@@ -52,7 +52,7 @@ use enemy_ai::{ChodeDeath, RunBossAI, RunChodeAI};
 mod all_components {
     pub use crate::enemy_ai::{Boss, BossAttack, ChodeAI};
     pub use crate::gameplay::{
-        Combative, Destructable, Exit, LevelObject, PenetratingBullet, Team, TeamWrap,
+        Asleep, Combative, Destructable, Exit, LevelObject, PenetratingBullet, Team, TeamWrap,
     };
     pub use crate::physics::{Bullet, CollidingWithWall, HitBox, PhysicsComponent, Transform};
     pub use crate::player::PlayerControls;
@@ -211,6 +211,7 @@ impl State for GameState {
         world.register::<TeamWrap>();
         world.register::<Boss>();
         world.register::<PenetratingBullet>();
+        world.register::<Asleep>();
 
         let player = world
             .create_entity()
@@ -440,6 +441,11 @@ fn make_dispatcher<'a, 'b>() -> Dispatcher<'a, 'b> {
         )
         .with(BulletSelfDestruct, "bullet_self_destruct", &["physics"])
         .with(ExitSystem, "exit", &["physics"])
+        .with(
+            SleepSystem,
+            "sleep_system",
+            &["chode_death", "boss_death", "player_death"],
+        )
         .build()
 }
 

@@ -310,3 +310,36 @@ impl<'a> System<'a> for BossDeathSystem {
         }
     }
 }
+
+const WAKEUP_RADIUS: f32 = 300.0;
+
+#[derive(Default)]
+pub struct Asleep;
+
+impl Component for Asleep {
+    type Storage = VecStorage<Self>;
+}
+
+pub struct SleepSystem;
+
+impl<'a> System<'a> for SleepSystem {
+    type SystemData = (
+        WriteStorage<'a, Asleep>,
+        ReadStorage<'a, Transform>,
+        ReadStorage<'a, PlayerControls>,
+        Entities<'a>,
+        Read<'a, LazyUpdate>,
+    );
+
+    fn run(&mut self, (asleeps, transforms, players, entities, lazy_update): Self::SystemData) {
+        for (_, player_transform) in (&players, &transforms).join() {
+            for (_, sleeper_transform, sleeper) in (&asleeps, &transforms, &entities).join() {
+                if (player_transform.position - sleeper_transform.position).len2()
+                    <= WAKEUP_RADIUS * WAKEUP_RADIUS
+                {
+                    lazy_update.remove::<Asleep>(sleeper);
+                }
+            }
+        }
+    }
+}

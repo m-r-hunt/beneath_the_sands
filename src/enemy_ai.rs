@@ -1,4 +1,4 @@
-use crate::gameplay::{PenetratingBullet, Team, TeamWrap};
+use crate::gameplay::{Asleep, PenetratingBullet, Team, TeamWrap};
 use crate::physics::PhysicsComponent;
 use crate::player::PlayerControls;
 use crate::prelude::*;
@@ -41,6 +41,7 @@ impl<'a> System<'a> for RunChodeAI {
         WriteStorage<'a, PhysicsComponent>,
         ReadStorage<'a, PlayerControls>,
         ReadStorage<'a, Transform>,
+        ReadStorage<'a, Asleep>,
         Read<'a, SimTime>,
         Entities<'a>,
         Read<'a, LazyUpdate>,
@@ -48,14 +49,25 @@ impl<'a> System<'a> for RunChodeAI {
 
     fn run(
         &mut self,
-        (mut chode_ais, mut physics, player_controls, transforms, sim_time, entities, lazy_update): Self::SystemData,
+        (
+            mut chode_ais,
+            mut physics,
+            player_controls,
+            transforms,
+            asleeps,
+            sim_time,
+            entities,
+            lazy_update,
+        ): Self::SystemData,
     ) {
         let mut player_pos = Vector::new(0.0, 0.0);
         for (_, player_transform) in (&player_controls, &transforms).join() {
             player_pos = player_transform.position;
         }
 
-        for (chode, transform, physics) in (&mut chode_ais, &transforms, &mut physics).join() {
+        for (chode, transform, physics, _) in
+            (&mut chode_ais, &transforms, &mut physics, !&asleeps).join()
+        {
             let target_point =
                 player_pos + (transform.position - player_pos).with_len(TARGET_DISTANCE);
             let dir = target_point - transform.position;
@@ -131,9 +143,7 @@ impl<'a> System<'a> for RunBossAI {
                                 lazy_update
                                     .create_entity(&entities)
                                     .with_bullet_prefab()
-                                    .with(Transform {
-                                        position: position,
-                                    })
+                                    .with(Transform { position })
                                     .with(PhysicsComponent {
                                         velocity,
                                         max_speed: speed,

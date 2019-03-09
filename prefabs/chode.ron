@@ -11,5 +11,6 @@ Prefab(
 	(name: "Combative", properties: [(name: "max_hp", value: "1")]),
 	(name: "LevelObject"),
 	(name: "TeamWrap", properties: [(name: "team", value: "Team::Enemy")]),
+	(name: "Asleep"),
     ],
 )
