@@ -103,6 +103,10 @@ impl Timer {
     fn expired(self, sim_time: SimTime) -> bool {
         sim_time.time > self.expire_time
     }
+
+    fn time_remaining(self, sim_time: SimTime) -> f32 {
+        self.expire_time - sim_time.time
+    }
 }
 
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq)]

@@ -70,19 +70,39 @@ impl<'a: 'b, 'b> System<'b> for Render<'a> {
         ReadStorage<'b, Camera>,
         ReadStorage<'b, Transform>,
         ReadStorage<'b, RenderComponent>,
+        ReadStorage<'b, Combative>,
+        Entities<'b>,
+        Read<'b, SimTime>,
     );
 
-    fn run(&mut self, (camera, transforms, render): Self::SystemData) {
+    fn run(
+        &mut self,
+        (camera, transforms, render, combatives, entities, sim_time): Self::SystemData,
+    ) {
         let mut camera_pos = Vector::new(-1.0, -1.0);
         for (_, camera_transform) in (&camera, &transforms).join() {
             camera_pos = camera_transform.position;
         }
-        for (movement, render) in (&transforms, &render).join() {
-            let circle = Circle::new(movement.position - camera_pos, render.radius);
-            self.window.draw(
-                &circle,
-                quicksilver::graphics::Background::Col(render.colour),
-            );
+        for (movement, render, ent) in (&transforms, &render, &entities).join() {
+            if let Some(c) = combatives.get(ent) {
+                let time = c.invincibility_cooldown.time_remaining(*sim_time);
+                let time_int = (time / 0.05).floor() as i32;
+                if c.invincibility_cooldown.expired(*sim_time) || time_int % 2 == 0 {
+                    let circle = Circle::new(movement.position - camera_pos, render.radius);
+                    self.window.draw(
+                        &circle,
+                        quicksilver::graphics::Background::Col(render.colour),
+                    );
+                } else {
+                    // Don't render
+                }
+            } else {
+                let circle = Circle::new(movement.position - camera_pos, render.radius);
+                self.window.draw(
+                    &circle,
+                    quicksilver::graphics::Background::Col(render.colour),
+                );
+            }
         }
     }
 }

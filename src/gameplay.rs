@@ -192,10 +192,13 @@ impl<'a> System<'a> for ExitSystem {
     }
 }
 
+const INVINCIBILITY_TIME: f32 = 0.75;
+
 #[derive(Default)]
 pub struct Combative {
     pub max_hp: i32,
     pub damage: i32,
+    pub invincibility_cooldown: Timer,
 }
 
 impl Component for Combative {
@@ -209,19 +212,23 @@ impl<'a> System<'a> for CombativeCollisionHandler {
         Entities<'a>,
         Write<'a, EventQueue>,
         WriteStorage<'a, Combative>,
+        Read<'a, SimTime>,
     );
 
-    fn run(&mut self, (entities, mut event_queue, mut combatives): Self::SystemData) {
+    fn run(&mut self, (entities, mut event_queue, mut combatives, sim_time): Self::SystemData) {
         let mut new_events = Vec::new();
         for event in event_queue.iter() {
             if let Event::Collision(entity, bullet) = event {
                 if combatives.get(*entity).is_some() {
                     let c = combatives.get_mut(*entity).unwrap();
-                    c.damage += 1;
-                    if c.damage >= c.max_hp {
-                        new_events.push(Event::EntityKilled(*entity));
+                    if c.invincibility_cooldown.expired(*sim_time) {
+                        c.damage += 1;
+                        if c.damage >= c.max_hp {
+                            new_events.push(Event::EntityKilled(*entity));
+                        }
+                        entities.delete(*bullet).unwrap();
+                        c.invincibility_cooldown.set(*sim_time, INVINCIBILITY_TIME);
                     }
-                    entities.delete(*bullet).unwrap();
                 }
             }
         }
