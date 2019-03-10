@@ -355,6 +355,11 @@ impl State for GameState {
                 Ok(())
             }
             UIState::Playing => {
+                if !self.shown_playing_help {
+                    self.shown_playing_help = true;
+                    self.world.add_resource(UIState::Help(Box::new(UIState::Playing), "Exploration".to_string(), "Controls:\nWASD to move\nMouse to aim\nLeft click to fire\nRight click to dash\n\nLook for the stairs down(Green circle)".to_string()));
+                    return Ok(());
+                }
                 if window.keyboard()[Key::Escape] == ButtonState::Pressed {
                     self.world.add_resource(UIState::Pause);
                     self.world
